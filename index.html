@@ -171,6 +171,8 @@
             justify-content: center;
             z-index: 20;
             transform-origin: center center;
+            cursor: move;
+            user-select: none;
             /* Cálculo correto baseado na grade:
                - Cada quadrado = 10cm x 10cm
                - 150cm = quadrado 15 (15 x 10cm = 150cm)
@@ -178,6 +180,23 @@
                - Área vai de 150cm a 200cm (largura de 50cm) */
             left: 658px; /* Posição correta para 150cm */
             top: 220px;  /* 220cm = 220px */
+            transition: all 0.1s ease;
+        }
+
+        .interaction-area:hover {
+            border-color: #ffff00;
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+        }
+
+        .interaction-area.dragging {
+            cursor: grabbing;
+            z-index: 30;
+            transform: scale(1.1);
+        }
+
+        .interaction-area.editing {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
         }
 
         .interaction-icon {
@@ -197,6 +216,89 @@
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0.3; }
         }
+
+        /* Editor Inline */
+        .interaction-editor {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 10px;
+            z-index: 40;
+            display: none;
+            min-width: 200px;
+        }
+
+        .interaction-editor input,
+        .interaction-editor textarea {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid #555;
+            background: #222;
+            color: white;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .interaction-editor button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 11px;
+        }
+
+        /* Menu Retrátil */
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            z-index: 100;
+            min-width: 300px;
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .controls.collapsed {
+            transform: translateX(-280px);
+        }
+
+        .controls-toggle {
+            position: absolute;
+            top: 10px;
+            right: -40px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Indicador de Posição */
+        .position-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
     </style>
 </head>
 <body>
@@ -204,14 +306,25 @@
         <div class="background-image" id="backgroundImage"></div>
         
         <!-- Área de Interação Específica -->
-        <div class="interaction-area" id="interactionArea" onclick="interactWithArea()">
+        <div class="interaction-area" id="interactionArea">
             <div class="interaction-icon">🎯</div>
-            <div class="interaction-text">Área de Teste</div>
-                    </div>
+            <div class="interaction-text" id="interactionText">Área de Teste</div>
+            
+            <!-- Editor Inline -->
+            <div class="interaction-editor" id="interactionEditor">
+                <input type="text" id="editIcon" placeholder="Ícone (emoji)" value="🎯">
+                <input type="text" id="editText" placeholder="Texto" value="Área de Teste">
+                <input type="number" id="editWidth" placeholder="Largura (px)" value="50">
+                <input type="number" id="editHeight" placeholder="Altura (px)" value="50">
+                <button onclick="saveInteraction()">💾 Salvar</button>
+                <button onclick="cancelEdit()">❌ Cancelar</button>
+            </div>
+        </div>
                         </div>
                         
-    <div class="controls">
-                        <div class="control-group">
+    <div class="controls" id="controls">
+        <button class="controls-toggle" id="controlsToggle">◀</button>
+        <div class="control-group">
             <label>Escala: <span id="scaleValue">5.72</span></label>
             <input type="range" id="scaleSlider" min="0.1" max="10.0" step="0.01" value="5.72">
             <input type="number" id="scaleInput" min="0.1" max="10.0" step="0.01" value="5.72">
@@ -244,6 +357,15 @@
     </div>
     
     <div class="position-display" id="positionDisplay">0%</div>
+    
+    <!-- Indicador de Posição da Área de Interação -->
+    <div class="position-indicator" id="positionIndicator">
+        <div>Área de Interação:</div>
+        <div>X: <span id="areaX">658</span>px</div>
+        <div>Y: <span id="areaY">220</span>px</div>
+        <div>Largura: <span id="areaWidth">50</span>px</div>
+        <div>Altura: <span id="areaHeight">50</span>px</div>
+    </div>
 
     <!-- Cliente UDP -->
     <script src="udp-client.js"></script>
@@ -263,6 +385,27 @@
 
         // Área de Interação Específica
         const interactionArea = document.getElementById('interactionArea');
+        const interactionEditor = document.getElementById('interactionEditor');
+        const interactionText = document.getElementById('interactionText');
+        const interactionIcon = interactionArea.querySelector('.interaction-icon');
+        
+        // Estado de edição
+        let isEditing = false;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let initialX = 0;
+        let initialY = 0;
+        
+        // Configuração da área de interação
+        let interactionConfig = {
+            x: 658,
+            y: 220,
+            width: 50,
+            height: 50,
+            icon: '🎯',
+            text: 'Área de Teste'
+        };
 
         // Configuração do trilho
         const TRACK_LENGTH_CM = 300; // Comprimento total do trilho
@@ -310,6 +453,9 @@
             
             // Aplicar valores corretos automaticamente (sem carregar calibração antiga)
             applyCorrectValues();
+            
+            // Inicializar sistema de edição
+            initInteractionEditor();
             
             console.log('✅ Pronto!');
         }
@@ -410,8 +556,189 @@
 
         // Função de interação com a área
         function interactWithArea() {
+            if (isEditing) return;
             console.log('🎮 Interação com área de teste');
             alert('🎯 Área de Interação! Esta área se move com a imagem de fundo.');
+        }
+
+        // Inicializar sistema de edição
+        function initInteractionEditor() {
+            // Event listeners para drag & drop
+            interactionArea.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+            
+            // Event listeners para teclado
+            document.addEventListener('keydown', handleKeyPress);
+            
+            // Event listeners para edição
+            interactionArea.addEventListener('dblclick', startEdit);
+            
+            // Event listeners para menu retrátil
+            document.getElementById('controlsToggle').addEventListener('click', toggleControls);
+            
+            // Carregar configuração salva
+            loadInteractionConfig();
+            
+            console.log('🎯 Sistema de edição inicializado');
+        }
+
+        // Drag & Drop
+        function startDrag(e) {
+            if (isEditing) return;
+            e.preventDefault();
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            
+            const rect = interactionArea.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+            
+            interactionArea.classList.add('dragging');
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+            
+            const newX = initialX + deltaX;
+            const newY = initialY + deltaY;
+            
+            interactionConfig.x = newX;
+            interactionConfig.y = newY;
+            
+            updateInteractionPosition();
+        }
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            interactionArea.classList.remove('dragging');
+            saveInteractionConfig();
+        }
+
+        // Controles de teclado
+        function handleKeyPress(e) {
+            if (isEditing) return;
+            
+            const step = e.shiftKey ? 10 : 1; // Shift = movimento mais rápido
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    interactionConfig.x -= step;
+                    updateInteractionPosition();
+                    saveInteractionConfig();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    interactionConfig.x += step;
+                    updateInteractionPosition();
+                    saveInteractionConfig();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    interactionConfig.y -= step;
+                    updateInteractionPosition();
+                    saveInteractionConfig();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    interactionConfig.y += step;
+                    updateInteractionPosition();
+                    saveInteractionConfig();
+                    break;
+                case 'e':
+                case 'E':
+                    e.preventDefault();
+                    startEdit();
+                    break;
+            }
+        }
+
+        // Edição inline
+        function startEdit() {
+            isEditing = true;
+            interactionArea.classList.add('editing');
+            interactionEditor.style.display = 'block';
+            
+            // Preencher campos com valores atuais
+            document.getElementById('editIcon').value = interactionConfig.icon;
+            document.getElementById('editText').value = interactionConfig.text;
+            document.getElementById('editWidth').value = interactionConfig.width;
+            document.getElementById('editHeight').value = interactionConfig.height;
+        }
+
+        function saveInteraction() {
+            // Atualizar configuração
+            interactionConfig.icon = document.getElementById('editIcon').value;
+            interactionConfig.text = document.getElementById('editText').value;
+            interactionConfig.width = parseInt(document.getElementById('editWidth').value);
+            interactionConfig.height = parseInt(document.getElementById('editHeight').value);
+            
+            // Aplicar mudanças
+            interactionIcon.textContent = interactionConfig.icon;
+            interactionText.textContent = interactionConfig.text;
+            interactionArea.style.width = interactionConfig.width + 'px';
+            interactionArea.style.height = interactionConfig.height + 'px';
+            
+            // Salvar e fechar editor
+            saveInteractionConfig();
+            cancelEdit();
+        }
+
+        function cancelEdit() {
+            isEditing = false;
+            interactionArea.classList.remove('editing');
+            interactionEditor.style.display = 'none';
+        }
+
+        // Atualizar posição visual
+        function updateInteractionPosition() {
+            interactionArea.style.left = interactionConfig.x + 'px';
+            interactionArea.style.top = interactionConfig.y + 'px';
+            
+            // Atualizar indicador de posição
+            document.getElementById('areaX').textContent = interactionConfig.x;
+            document.getElementById('areaY').textContent = interactionConfig.y;
+            document.getElementById('areaWidth').textContent = interactionConfig.width;
+            document.getElementById('areaHeight').textContent = interactionConfig.height;
+        }
+
+        // Menu retrátil
+        function toggleControls() {
+            const controls = document.getElementById('controls');
+            const toggle = document.getElementById('controlsToggle');
+            
+            controls.classList.toggle('collapsed');
+            toggle.textContent = controls.classList.contains('collapsed') ? '▶' : '◀';
+        }
+
+        // Salvar/carregar configuração
+        function saveInteractionConfig() {
+            localStorage.setItem('interactionConfig', JSON.stringify(interactionConfig));
+            console.log('💾 Configuração da área salva:', interactionConfig);
+        }
+
+        function loadInteractionConfig() {
+            const saved = localStorage.getItem('interactionConfig');
+            if (saved) {
+                try {
+                    interactionConfig = JSON.parse(saved);
+                    updateInteractionPosition();
+                    interactionIcon.textContent = interactionConfig.icon;
+                    interactionText.textContent = interactionConfig.text;
+                    interactionArea.style.width = interactionConfig.width + 'px';
+                    interactionArea.style.height = interactionConfig.height + 'px';
+                    console.log('📂 Configuração carregada:', interactionConfig);
+                } catch (error) {
+                    console.error('❌ Erro ao carregar configuração:', error);
+                }
+            }
         }
 
         // Calcular posição real em centímetros
