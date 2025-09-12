@@ -13,7 +13,7 @@ console.log('⏸️  Sistema pausado - aguardando encoder...');
 // Recebe dados UDP do encoder
 udpServer.on('message', (msg, rinfo) => {
     try {
-        const data = msg.toString();
+        const data = msg.toString().trim(); // Remove quebras de linha e espaços
         console.log(`📡 UDP Recebido: ${data}`);
         
         // Converte formato "value 0.582" ou apenas "0.582" para JSON

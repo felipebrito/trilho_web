@@ -13,7 +13,7 @@ console.log('⏸️  Sistema pausado - aguardando encoder...');
 // Recebe dados UDP do encoder
 udpServer.on('message', (msg, rinfo) => {
     try {
-        const data = msg.toString();
+        const data = msg.toString().trim(); // Remove quebras de linha e espaços
         console.log(`\n🔍 DEBUG WINDOWS - UDP Recebido: "${data}"`);
         console.log(`🔍 DEBUG WINDOWS - Tipo: ${typeof data}`);
         console.log(`🔍 DEBUG WINDOWS - Length: ${data.length}`);
