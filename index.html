@@ -176,6 +176,7 @@
             font-size: 24px;
             font-weight: bold;
             text-align: center;
+            transform-origin: center center;
         }
 
         .interaction-point.active {
@@ -225,71 +226,38 @@
                 <div class="interaction-title">🏠 Ponto 1</div>
                 <div class="interaction-description">
                     Bem-vindo ao início da jornada!<br>
-                    Aqui você pode explorar as primeiras informações.
+                    Este ponto se move com a imagem.
                 </div>
                 <button class="interaction-button" onclick="interact(1)">Explorar</button>
             </div>
-        </div>
-        
+                    </div>
+                    
         <div class="interaction-point" id="interaction2">
             <div class="interaction-content">
                 <div class="interaction-title">🎯 Ponto 2</div>
                 <div class="interaction-description">
-                    Continue a jornada e descubra<br>
-                    mais detalhes interessantes.
+                    Segundo ponto de teste<br>
+                    Também acompanha o movimento.
                 </div>
                 <button class="interaction-button" onclick="interact(2)">Continuar</button>
             </div>
-        </div>
-        
-        <div class="interaction-point" id="interaction3">
-            <div class="interaction-content">
-                <div class="interaction-title">🌟 Ponto 3</div>
-                <div class="interaction-description">
-                    Você está no meio do caminho!<br>
-                    Aproveite para interagir com o conteúdo.
-                </div>
-                <button class="interaction-button" onclick="interact(3)">Interagir</button>
-            </div>
-        </div>
-        
-        <div class="interaction-point" id="interaction4">
-            <div class="interaction-content">
-                <div class="interaction-title">🚀 Ponto 4</div>
-                <div class="interaction-description">
-                    Quase chegando ao final!<br>
-                    Explore as últimas informações.
-                </div>
-                <button class="interaction-button" onclick="interact(4)">Explorar</button>
-            </div>
-        </div>
-        
-        <div class="interaction-point" id="interaction5">
-            <div class="interaction-content">
-                <div class="interaction-title">🏁 Final</div>
-                <div class="interaction-description">
-                    Parabéns! Você completou a jornada.<br>
-                    Obrigado por explorar nosso conteúdo.
-                </div>
-                <button class="interaction-button" onclick="interact(5)">Finalizar</button>
-            </div>
-        </div>
-    </div>
-    
+                        </div>
+                        </div>
+                        
     <div class="controls">
-        <div class="control-group">
+                        <div class="control-group">
             <label>Escala: <span id="scaleValue">5.72</span></label>
             <input type="range" id="scaleSlider" min="0.1" max="10.0" step="0.01" value="5.72">
             <input type="number" id="scaleInput" min="0.1" max="10.0" step="0.01" value="5.72">
-        </div>
-        
-        <div class="control-group">
+                        </div>
+                        
+                        <div class="control-group">
             <label>X: <span id="offsetXValue">446</span></label>
             <input type="range" id="offsetXSlider" min="-5000" max="5000" step="1" value="446">
             <input type="number" id="offsetXInput" min="-5000" max="5000" step="1" value="446">
-        </div>
-        
-        <div class="control-group">
+                        </div>
+                        
+                        <div class="control-group">
             <label>Y: <span id="offsetYValue">96</span></label>
             <input type="range" id="offsetYSlider" min="-5000" max="5000" step="1" value="96">
             <input type="number" id="offsetYInput" min="-5000" max="5000" step="1" value="96">
@@ -303,8 +271,8 @@
         <button class="btn" onclick="saveCalibration()">💾 Salvar</button>
         <button class="btn" onclick="toggleMode()">🎮 Modo Uso</button>
         <button class="btn" onclick="toggleUDP()" id="udpButton">📡 UDP OFF</button>
-    </div>
-    
+            </div>
+            
     <div class="slider">
         <input type="range" id="positionSlider" min="0" max="100" step="0.1" value="0">
     </div>
@@ -329,11 +297,8 @@
 
         // Sistema de Pontos de Interação
         const interactionPoints = [
-            { id: 'interaction1', start: 0, end: 20, active: false },
-            { id: 'interaction2', start: 20, end: 40, active: false },
-            { id: 'interaction3', start: 40, end: 60, active: false },
-            { id: 'interaction4', start: 60, end: 80, active: false },
-            { id: 'interaction5', start: 80, end: 100, active: false }
+            { id: 'interaction1', start: 0, end: 50, active: false },
+            { id: 'interaction2', start: 50, end: 100, active: false }
         ];
 
         // Configuração do trilho
@@ -471,6 +436,14 @@
             const transform = `scale(${config.scale}) translate(${translateX}px, ${translateY}px)`;
             backgroundImage.style.transform = transform;
             
+            // Aplicar a MESMA transformação aos pontos de interação
+            interactionPoints.forEach(point => {
+                const element = document.getElementById(point.id);
+                if (element) {
+                    element.style.transform = transform;
+                }
+            });
+            
             // Atualizar pontos de interação baseado na posição
             updateInteractionPoints(config.position);
             
@@ -504,19 +477,10 @@
             // Aqui você pode adicionar lógica específica para cada ponto
             switch(pointNumber) {
                 case 1:
-                    alert('🏠 Ponto 1: Bem-vindo! Esta é a primeira interação.');
+                    alert('🏠 Ponto 1: Bem-vindo! Este ponto se move com a imagem de fundo.');
                     break;
                 case 2:
-                    alert('🎯 Ponto 2: Continue explorando!');
-                    break;
-                case 3:
-                    alert('🌟 Ponto 3: Meio do caminho!');
-                    break;
-                case 4:
-                    alert('🚀 Ponto 4: Quase no final!');
-                    break;
-                case 5:
-                    alert('🏁 Ponto 5: Parabéns! Jornada concluída!');
+                    alert('🎯 Ponto 2: Segundo ponto de teste! Também acompanha o movimento.');
                     break;
             }
         }
