@@ -16,13 +16,33 @@ udpServer.on('message', (msg, rinfo) => {
         const data = msg.toString();
         console.log(`📡 UDP Recebido: ${data}`);
         
-        // Converte formato "value 0.582" para JSON
+        // Converte formato "value 0.582" ou apenas "0.582" para JSON
+        let value = null;
+        
+        // Tentar formato "value X.XXX"
         const match = data.match(/value\s+([\d.]+)/);
         if (match) {
-            const value = parseFloat(match[1]);
+            value = parseFloat(match[1]);
+        } else {
+            // Tentar apenas número
+            const numberMatch = data.match(/^([\d.]+)$/);
+            if (numberMatch) {
+                value = parseFloat(numberMatch[1]);
+            }
+        }
+        
+        if (value !== null && !isNaN(value)) {
+            // Normalizar valor para 0-1 se for maior que 1 (assumindo que valores > 1 são em centímetros)
+            let normalizedValue = value;
+            if (value > 1) {
+                // Se o valor for maior que 1, assumir que é em centímetros (0-300cm)
+                normalizedValue = Math.max(0, Math.min(1, value / 300));
+                console.log(`📏 Convertendo ${value}cm para ${normalizedValue.toFixed(3)} (normalizado)`);
+            }
+            
             const jsonData = {
                 type: 'position',
-                value: value,
+                value: normalizedValue,
                 timestamp: Date.now()
             };
             
