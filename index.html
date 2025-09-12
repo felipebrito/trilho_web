@@ -621,42 +621,60 @@
             saveInteractionConfig();
         }
 
-        // Controles de teclado
+        // Controles de teclado - MOVEM A CÂMERA (como UDP)
         function handleKeyPress(e) {
             if (isEditing) return;
             
-            const step = e.shiftKey ? 10 : 1; // Shift = movimento mais rápido
+            const step = e.shiftKey ? 5 : 1; // Shift = movimento mais rápido (5% vs 1%)
             
             switch(e.key) {
                 case 'ArrowLeft':
                     e.preventDefault();
-                    interactionConfig.x -= step;
-                    updateInteractionPosition();
-                    saveInteractionConfig();
+                    // Mover câmera para a esquerda (diminuir posição)
+                    config.position = Math.max(0, config.position - step);
+                    updatePosition(config.position);
+                    // Simular dados UDP
+                    simulateUDPData(config.position);
                     break;
                 case 'ArrowRight':
                     e.preventDefault();
-                    interactionConfig.x += step;
-                    updateInteractionPosition();
-                    saveInteractionConfig();
+                    // Mover câmera para a direita (aumentar posição)
+                    config.position = Math.min(100, config.position + step);
+                    updatePosition(config.position);
+                    // Simular dados UDP
+                    simulateUDPData(config.position);
                     break;
                 case 'ArrowUp':
                     e.preventDefault();
-                    interactionConfig.y -= step;
-                    updateInteractionPosition();
-                    saveInteractionConfig();
+                    // Mover câmera para cima (diminuir posição Y)
+                    config.offsetY -= e.shiftKey ? 10 : 1;
+                    updateOffsetY(config.offsetY);
                     break;
                 case 'ArrowDown':
                     e.preventDefault();
-                    interactionConfig.y += step;
-                    updateInteractionPosition();
-                    saveInteractionConfig();
+                    // Mover câmera para baixo (aumentar posição Y)
+                    config.offsetY += e.shiftKey ? 10 : 1;
+                    updateOffsetY(config.offsetY);
                     break;
                 case 'e':
                 case 'E':
                     e.preventDefault();
                     startEdit();
                     break;
+            }
+        }
+
+        // Simular dados UDP para feedback visual
+        function simulateUDPData(position) {
+            console.log(`📡 Simulando UDP: posição ${position.toFixed(1)}%`);
+            
+            // Atualizar display de posição
+            positionDisplay.textContent = position.toFixed(1) + '%';
+            
+            // Se UDP estiver habilitado, simular recebimento de dados
+            if (udpEnabled && window.udpClient) {
+                const normalizedPosition = position / 100; // Converter para 0-1
+                console.log(`🎯 Enviando para UDP: ${normalizedPosition.toFixed(3)}`);
             }
         }
 
