@@ -157,62 +157,41 @@
             font-weight: bold;
         }
 
-        /* Pontos de Interação */
-        .interaction-point {
+        /* Área de Interação Específica */
+        .interaction-area {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-            pointer-events: none;
-            z-index: 20;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 0, 0, 0.3);
+            border: 3px solid #ff0000;
+            border-radius: 20px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: white;
+            z-index: 20;
+            transform-origin: center center;
+            /* Posição inicial: 100cm, 220cm (convertido para pixels) */
+            left: 100px; /* 100cm = 100px para teste */
+            top: 220px;  /* 220cm = 220px para teste */
+        }
+
+        .interaction-icon {
+            font-size: 80px;
+            animation: blink 1s infinite;
+            margin-bottom: 20px;
+        }
+
+        .interaction-text {
             font-size: 24px;
             font-weight: bold;
-            text-align: center;
-            transform-origin: center center;
-        }
-
-        .interaction-point.active {
-            opacity: 1;
-        }
-
-        .interaction-content {
-            max-width: 80%;
-            text-align: center;
-        }
-
-        .interaction-title {
-            font-size: 32px;
-            margin-bottom: 20px;
-            color: #4CAF50;
-        }
-
-        .interaction-description {
-            font-size: 18px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-        }
-
-        .interaction-button {
-            background: #4CAF50;
             color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: background 0.3s;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
 
-        .interaction-button:hover {
-            background: #45a049;
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
         }
     </style>
 </head>
@@ -220,28 +199,11 @@
     <div class="viewport">
         <div class="background-image" id="backgroundImage"></div>
         
-        <!-- Pontos de Interação -->
-        <div class="interaction-point" id="interaction1">
-            <div class="interaction-content">
-                <div class="interaction-title">🏠 Ponto 1</div>
-                <div class="interaction-description">
-                    Bem-vindo ao início da jornada!<br>
-                    Este ponto se move com a imagem.
-                </div>
-                <button class="interaction-button" onclick="interact(1)">Explorar</button>
-            </div>
-                    </div>
-                    
-        <div class="interaction-point" id="interaction2">
-            <div class="interaction-content">
-                <div class="interaction-title">🎯 Ponto 2</div>
-                <div class="interaction-description">
-                    Segundo ponto de teste<br>
-                    Também acompanha o movimento.
-                </div>
-                <button class="interaction-button" onclick="interact(2)">Continuar</button>
-            </div>
-                        </div>
+        <!-- Área de Interação Específica -->
+        <div class="interaction-area" id="interactionArea" onclick="interactWithArea()">
+            <div class="interaction-icon">🎯</div>
+            <div class="interaction-text">Área de Teste</div>
+        </div>
                         </div>
                         
     <div class="controls">
@@ -295,11 +257,8 @@
         let udpEnabled = false;
         let udpInterval = null;
 
-        // Sistema de Pontos de Interação
-        const interactionPoints = [
-            { id: 'interaction1', start: 0, end: 50, active: false },
-            { id: 'interaction2', start: 50, end: 100, active: false }
-        ];
+        // Área de Interação Específica
+        const interactionArea = document.getElementById('interactionArea');
 
         // Configuração do trilho
         const TRACK_LENGTH_CM = 300; // Comprimento total do trilho
@@ -436,53 +395,19 @@
             const transform = `scale(${config.scale}) translate(${translateX}px, ${translateY}px)`;
             backgroundImage.style.transform = transform;
             
-            // Aplicar a MESMA transformação aos pontos de interação
-            interactionPoints.forEach(point => {
-                const element = document.getElementById(point.id);
-                if (element) {
-                    element.style.transform = transform;
-                }
-            });
-            
-            // Atualizar pontos de interação baseado na posição
-            updateInteractionPoints(config.position);
+            // Aplicar a MESMA transformação à área de interação
+            if (interactionArea) {
+                interactionArea.style.transform = transform;
+                console.log('🎯 Área de interação transformada:', transform);
+            }
             
             console.log('🔄 Posição real:', realPosition.toFixed(1) + '%', 'Transform:', transform);
         }
 
-        // Atualizar pontos de interação baseado na posição
-        function updateInteractionPoints(position) {
-            interactionPoints.forEach(point => {
-                const element = document.getElementById(point.id);
-                const isInRange = position >= point.start && position <= point.end;
-                
-                if (isInRange && !point.active) {
-                    // Ativar ponto
-                    point.active = true;
-                    element.classList.add('active');
-                    console.log(`🎯 Ponto ${point.id} ativado na posição ${position}%`);
-                } else if (!isInRange && point.active) {
-                    // Desativar ponto
-                    point.active = false;
-                    element.classList.remove('active');
-                    console.log(`🔇 Ponto ${point.id} desativado na posição ${position}%`);
-                }
-            });
-        }
-
-        // Função de interação com os pontos
-        function interact(pointNumber) {
-            console.log(`🎮 Interação com ponto ${pointNumber}`);
-            
-            // Aqui você pode adicionar lógica específica para cada ponto
-            switch(pointNumber) {
-                case 1:
-                    alert('🏠 Ponto 1: Bem-vindo! Este ponto se move com a imagem de fundo.');
-                    break;
-                case 2:
-                    alert('🎯 Ponto 2: Segundo ponto de teste! Também acompanha o movimento.');
-                    break;
-            }
+        // Função de interação com a área
+        function interactWithArea() {
+            console.log('🎮 Interação com área de teste');
+            alert('🎯 Área de Interação! Esta área se move com a imagem de fundo.');
         }
 
         // Calcular posição real em centímetros
