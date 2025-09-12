@@ -1,145 +1,159 @@
-# Trilho Digital - TV Vertical
+# 🎯 Trilho Digital - Sistema de Calibração e Movimento
 
-Uma aplicação web interativa que transforma uma TV vertical de 42" em uma "janela digital" que se move sobre um trilho físico, criando a sensação de realidade aumentada física + digital.
+Sistema web para calibração e controle de movimento horizontal de imagens de fundo, integrado com dados UDP em tempo real.
 
-## 🎯 Características
+## ✨ Funcionalidades
 
-- **TV Vertical**: Otimizado para TV 42" em posição vertical (9:16)
-- **Trilho Físico**: Sincronização com encoder de 3 metros
-- **Calibração Precisa**: Editor para alinhar conteúdo digital com arte impressa
-- **Conteúdo Interativo**: Hotspots, textos, vídeos e animações
-- **Animações Fluidas**: Biblioteca GSAP para transições suaves
-- **Modo Mock**: Simulação para desenvolvimento sem hardware
+### 🖼️ Calibração Automática
+- **Carregamento automático** da imagem `bg300x200-comtv.jpg` no tamanho correto
+- **Valores pré-configurados** otimizados (escala: 5.72, offsetX: 446, offsetY: 96)
+- **Área útil destacada** com borda vermelha (proporção 9:16)
+- **Controles precisos** para ajuste fino de escala e posição
 
-## 🚀 Como Usar
+### 🎮 Controles Intuitivos
+- **Sliders responsivos** com altura aumentada para fácil manipulação
+- **Campos numéricos** com suporte a scroll do mouse para precisão
+- **Botões de ação rápida**:
+  - `Reset` - Volta aos valores padrão
+  - `Centralizar` - Centraliza a imagem
+  - `Encaixar na TV` - Aplica calibração otimizada
+  - `+` / `-` - Zoom in/out
+  - `💾 Salvar` - Salva configuração atual
+  - `🎮 Modo Uso` - Oculta controles para operação
+  - `📡 UDP ON/OFF` - Ativa/desativa recepção de dados
 
-### 1. Modo Editor (Calibração)
+### 📡 Integração UDP Real
+- **Recepção de dados UDP** na porta 8888
+- **Bridge WebSocket** (porta 8889) para comunicação web
+- **Mapeamento correto** do slider (0-100%) para movimento real (0-89%)
+- **Processamento em tempo real** de dados do encoder
 
-1. **Importar Arte**: Use o botão "Arte Impressa" para carregar a imagem que está impressa na parede
-2. **Calibrar Posição**: 
-   - Ajuste a escala com o slider "Escala"
-   - Use os controles "Offset X" e "Offset Y" para posicionar
-   - Arraste a viewport azul diretamente na imagem para ajuste fino
-3. **Salvar Configuração**: Clique em "Salvar Configuração" para baixar o arquivo JSON
-4. **Alternar Modo**: Clique em "Modo Execução" para testar
+### 💾 Persistência
+- **Salvamento automático** de configurações no localStorage
+- **Carregamento** de configurações salvas
+- **Valores padrão** otimizados para a imagem de calibração
 
-### 2. Modo Execução
+## 🚀 Instalação e Uso
 
-1. **Visualização**: A tela mostra a "janela digital" movendo-se sobre a arte
-2. **Controles**:
-   - **Espaço**: Pausar/retomar animação
-   - **Setas ← →**: Controlar posição manualmente
-   - **Ctrl/Cmd + E**: Voltar ao editor
-3. **Interação**: Clique nos hotspots azuis para ver informações
+### Pré-requisitos
+```bash
+node.js (versão 14 ou superior)
+npm
+```
 
-## 🎮 Controles de Teclado
+### Instalação
+```bash
+# Clone o repositório
+git clone https://github.com/felipebrito/trilho_web.git
+cd trilho_web
 
-| Tecla | Ação |
-|-------|------|
-| `Ctrl/Cmd + E` | Modo Editor |
-| `Ctrl/Cmd + R` | Modo Execução |
-| `Espaço` | Pausar/Retomar animação |
-| `← →` | Controlar posição manualmente |
+# Instale as dependências
+npm install
 
-## 🔧 Configuração Técnica
+# Inicie o servidor UDP
+node udp-bridge.js
 
-### Hardware
-- **TV**: 42", FullHD, posição vertical
-- **Trilho**: 300cm de comprimento
-- **Encoder**: Valores normalizados 0-1 via UDP (porta 8888)
-- **Área Física**: 300cm x 200cm
-- **Viewport**: 93.5cm x 52.5cm
+# Em outro terminal, inicie o servidor web
+npm start
+```
 
-### Software
-- **Biblioteca**: GSAP 3.12.2
-- **Protocolo**: UDP (simulado em desenvolvimento)
-- **Formato**: JSON para configurações
-- **Armazenamento**: LocalStorage + arquivos
+### Acesso
+- **Interface principal**: `http://localhost:3000/trilho-final.html`
+- **Servidor UDP**: `localhost:8888`
+- **WebSocket**: `localhost:8889`
+
+## 🎯 Como Usar
+
+### 1. Calibração Inicial
+1. Abra `trilho-final.html` no navegador
+2. A imagem já carrega no tamanho correto automaticamente
+3. Use os controles para ajustes finos se necessário
+4. Clique `💾 Salvar` para salvar a configuração
+
+### 2. Modo de Operação
+1. Clique `🎮 Modo Uso` para ocultar controles
+2. Clique `📡 UDP ON` para ativar recepção de dados
+3. A imagem se move automaticamente conforme dados UDP
+
+### 3. Envio de Dados UDP
+```bash
+# Formato dos dados UDP
+echo "value 0.5" | nc -u localhost 8888
+
+# Ou use o cliente de teste
+node udp-client.js
+```
 
 ## 📁 Estrutura do Projeto
 
 ```
 trilho_web/
-├── index.html          # Interface principal
-├── styles.css          # Estilos e layout
-├── app.js             # Aplicação principal
-├── editor.js          # Editor de calibração
-├── viewport.js        # Sistema de viewport
-├── udp-client.js      # Cliente UDP (mock)
-└── README.md          # Este arquivo
+├── trilho-final.html      # Interface principal (VERSÃO FUNCIONAL)
+├── udp-bridge.js          # Servidor UDP → WebSocket
+├── udp-client.js          # Cliente UDP para testes
+├── editor/
+│   └── bg300x200-comtv.jpg # Imagem de calibração
+├── package.json           # Dependências Node.js
+└── README.md             # Este arquivo
 ```
 
-## 🛠️ Desenvolvimento
+## 🔧 Configuração Técnica
 
-### Modo Mock
-Por padrão, a aplicação roda em modo mock para desenvolvimento:
-- Simula movimento automático do trilho
-- Não requer hardware físico
-- Permite testar todas as funcionalidades
+### Valores de Calibração Otimizados
+- **Escala**: 5.72 (tamanho da imagem)
+- **Offset X**: 446px (posição horizontal)
+- **Offset Y**: 96px (posição vertical)
+- **Movimento máximo**: 890px (0-100% do slider)
 
-### Ativação do UDP Real
-Para usar com hardware real, modifique `udp-client.js`:
-```javascript
-this.mockMode = false; // Desativa modo mock
-```
+### Mapeamento de Dados
+- **Dados UDP**: 0.0 - 1.0 (posição normalizada)
+- **Slider**: 0% - 100% (interface)
+- **Movimento real**: 0% - 89% (limite da imagem)
 
-### Adicionando Conteúdo Digital
-Edite `viewport.js` no método `createDigitalContent()`:
-```javascript
-// Adicionar hotspot
-this.addHotspot(x, y, 'id', 'tooltip');
+## 🐛 Resolução de Problemas
 
-// Adicionar texto
-this.addFloatingText(x, y, 'texto');
+### Imagem não carrega
+- Verifique se `editor/bg300x200-comtv.jpg` existe
+- Confirme que o servidor web está rodando
 
-// Adicionar vídeo
-this.addVideo(x, y, 'video.mp4', 'descrição');
-```
+### UDP não funciona
+- Verifique se `udp-bridge.js` está rodando
+- Confirme que a porta 8888 está livre
+- Teste com: `echo "value 0.5" | nc -u localhost 8888`
 
-## 🎨 Personalização
+### Controles não respondem
+- Recarregue a página
+- Verifique o console do navegador para erros
+- Confirme que `udp-client.js` está carregado
 
-### Cores e Estilo
-Modifique `styles.css`:
-- Cores principais: `#007acc` (azul)
-- Fundo: `#1a1a1a` (escuro)
-- Controles: `#2a2a2a` (cinza escuro)
+## 📝 Changelog
 
-### Animações
-Use GSAP para animações personalizadas em `viewport.js`:
-```javascript
-gsap.to(element, {
-    opacity: 1,
-    scale: 1,
-    duration: 0.6,
-    ease: "back.out(1.7)"
-});
-```
+### v1.0.0 - Versão Funcional
+- ✅ Calibração automática implementada
+- ✅ Integração UDP real funcionando
+- ✅ Interface responsiva e intuitiva
+- ✅ Persistência de configurações
+- ✅ Mapeamento correto do movimento
+- ✅ Modo de uso para operação
 
-## 📱 Responsividade
+## 🤝 Contribuição
 
-A aplicação é otimizada para:
-- TV vertical (9:16)
-- Resolução FullHD (1920x1080)
-- Navegadores modernos
-- Touch devices (controles de arrastar)
-
-## 🔍 Debug
-
-O modo debug é ativado automaticamente em localhost:
-- Painel de informações em tempo real
-- Controles de posição
-- Status da conexão UDP
-- Métricas de performance
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
 ## 📄 Licença
 
-Projeto desenvolvido para uso interno. Todos os direitos reservados.
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
-## 🤝 Suporte
+## 👨‍💻 Autor
 
-Para dúvidas ou problemas:
-1. Verifique o console do navegador
-2. Confirme se a imagem foi carregada corretamente
-3. Teste o modo mock antes de usar hardware real
-4. Verifique as configurações de calibração
+**Felipe Brito**
+- GitHub: [@felipebrito](https://github.com/felipebrito)
+- Projeto: [trilho_web](https://github.com/felipebrito/trilho_web)
 
+---
+
+🎯 **Sistema pronto para produção!** A versão `trilho-final.html` é a versão principal e funcional.
