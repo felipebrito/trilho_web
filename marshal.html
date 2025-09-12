@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <title>Painel + TV — 1080×1920</title>
   <!-- 
-    CALIBRAÇÃO PADRÃO:
+    CALIBRAÇÃO PADRÃO (bg300x200-comtv.jpg):
     - Escala: 36.1% (0.361)
-    - Offset X: 15.884px (lateral esquerda)
-    - Offset Y: -542.583px (posição vertical)
-    - Trilho: 0-5079px (6159-1080)
-    - Dimensões: 6159×1920px
+    - Offset X: -1.12488px (posição inicial testada)
+    - Offset Y: -542.793px (posição inicial testada)
+    - Trilho: 0-15928px (17008-1080)
+    - Dimensões: 17008×11339px (imagem real)
     
-    Valores baseados nos dados de calibração:
-    - Limite superior: translate(15.884px, -542.583px) scale(0.361)
-    - Limite inferior: translate(-5063.99px, -542.583px) scale(0.361)
+    Valores baseados na posição inicial que funciona:
+    - Posição inicial: translate(-1.12488px, -542.793px) scale(0.361)
+    - Imagem: bg300x200-comtv.jpg (17008×11339px)
   -->
   <style>
     :root{ --bg:#000; --text:#fff; --muted:#a9b4c2; --accent:#2dd19e; --frame:#333; }
@@ -137,6 +137,7 @@
         <button class="bg-white text-black px-4 py-2" id="save">Salvar preset</button>
         <button class="bg-white text-black px-4 py-2" id="clear">Limpar preset</button>
         <button class="bg-green-500 text-white px-4 py-2" id="reset">Reset Padrão</button>
+        <button class="bg-blue-500 text-white px-4 py-2" id="findLimits">Encontrar Limites</button>
         <button class="bg-white text-black px-4 py-2" id="toggleMode"><span id="modeLabel">Controles</span> (C)</button>
       </div>
     </div>
@@ -192,22 +193,23 @@
     const saveBtn = $('save');
     const clearBtn = $('clear');
     const resetBtn = $('reset');
+    const findLimitsBtn = $('findLimits');
 
     const LSKEY = 'tv_cal_preset_v1';
     const MODEKEY = 'tv_mode_v1';
 
     const mobileToggle = $('mobileToggle');
 
-    // Valores de calibração padrão (baseados nos dados fornecidos)
+    // Valores de calibração padrão (baseados na imagem real bg300x200-comtv.jpg)
     const DEFAULT_CALIBRATION = {
       scale: 0.361,
-      offX: 15.884,
-      offY: -542.583,
+      offX: -1.12488,    // Posição inicial que funciona
+      offY: -542.793,    // Posição inicial que funciona
       pos: 0,
-      imgW: 6159, // Assumindo largura padrão da imagem
-      imgH: 1920, // Altura padrão
+      imgW: 17008,       // Largura real da imagem bg300x200-comtv.jpg
+      imgH: 11339,       // Altura real da imagem bg300x200-comtv.jpg
       railLeftX: 0,
-      railRightX: 5079, // 6159 - 1080 (largura da viewport)
+      railRightX: 15928, // 17008 - 1080 (largura da viewport)
       gridPx: 100,
       showGrid: false,
       mode: 'cal'
@@ -235,6 +237,33 @@
       offY.value = S.offY;
       gridPx.value = S.gridPx;
       toggleGrid.checked = S.showGrid;
+    }
+    
+    function findLimits(){
+      console.log('🔍 Procurando limites do trilho...');
+      
+      // Testar diferentes posições para encontrar os limites
+      const testPositions = [0, 25, 50, 75, 90, 95, 98, 99, 99.5, 99.9, 100];
+      let currentIndex = 0;
+      
+      function testNextPosition(){
+        if(currentIndex >= testPositions.length){
+          console.log('✅ Teste de limites concluído');
+          return;
+        }
+        
+        const testPos = testPositions[currentIndex];
+        S.pos = testPos;
+        pos.value = testPos;
+        render();
+        
+        console.log(`📍 Testando posição ${testPos}% - translateX: ${((-S.pos/100 * (S.railRightX - S.railLeftX)) + S.offX).toFixed(2)}px`);
+        
+        currentIndex++;
+        setTimeout(testNextPosition, 1000); // 1 segundo entre testes
+      }
+      
+      testNextPosition();
     }
 
     function mapPosToImgX(){
@@ -305,6 +334,7 @@
     saveBtn.addEventListener('click', saveLocal);
     clearBtn.addEventListener('click', ()=>{ localStorage.removeItem(LSKEY); alert('Preset limpo.'); });
     resetBtn.addEventListener('click', resetToDefault);
+    findLimitsBtn.addEventListener('click', findLimits);
 
     // Fullscreen opcional
     fs.addEventListener('change', async ()=>{
@@ -388,37 +418,50 @@
       if(e.key==='ArrowRight' && !e.altKey){ S.pos = Math.min(100, S.pos + (e.shiftKey?5:1)); pos.value = S.pos; render(); }
     });
 
-    // Função para carregar imagem padrão (se não houver imagem carregada)
+    // Função para carregar imagem padrão (bg300x200-comtv.jpg)
     function loadDefaultImage(){
       if(!img.src || img.src === ''){
-        // Criar uma imagem padrão com as dimensões corretas
-        const canvas = document.createElement('canvas');
-        canvas.width = S.imgW;
-        canvas.height = S.imgH;
-        const ctx = canvas.getContext('2d');
-        
-        // Gradiente de fundo para visualização
-        const gradient = ctx.createLinearGradient(0, 0, S.imgW, 0);
-        gradient.addColorStop(0, '#1a1a2e');
-        gradient.addColorStop(0.5, '#16213e');
-        gradient.addColorStop(1, '#0f3460');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, S.imgW, S.imgH);
-        
-        // Adicionar texto de referência
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '48px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('TRILHO DIGITAL', S.imgW/2, S.imgH/2 - 50);
-        ctx.font = '24px Arial';
-        ctx.fillText(`${S.imgW}×${S.imgH}px`, S.imgW/2, S.imgH/2 + 20);
-        ctx.fillText('Calibração Padrão', S.imgW/2, S.imgH/2 + 50);
-        
-        img.src = canvas.toDataURL();
+        // Tentar carregar a imagem real primeiro
+        img.src = 'editor/bg300x200-comtv.jpg';
         img.onload = () => {
+          S.imgW = img.naturalWidth;
+          S.imgH = img.naturalHeight;
           S.railLeftX = 0;
           S.railRightX = Math.max(0, S.imgW - 1080);
+          console.log(`🖼️ Imagem carregada: ${S.imgW}×${S.imgH}px`);
           render();
+        };
+        img.onerror = () => {
+          // Fallback: criar imagem padrão se a real não carregar
+          console.log('⚠️ Imagem real não encontrada, criando fallback');
+          const canvas = document.createElement('canvas');
+          canvas.width = S.imgW;
+          canvas.height = S.imgH;
+          const ctx = canvas.getContext('2d');
+          
+          // Gradiente de fundo para visualização
+          const gradient = ctx.createLinearGradient(0, 0, S.imgW, 0);
+          gradient.addColorStop(0, '#1a1a2e');
+          gradient.addColorStop(0.5, '#16213e');
+          gradient.addColorStop(1, '#0f3460');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, S.imgW, S.imgH);
+          
+          // Adicionar texto de referência
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '48px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('TRILHO DIGITAL', S.imgW/2, S.imgH/2 - 50);
+          ctx.font = '24px Arial';
+          ctx.fillText(`${S.imgW}×${S.imgH}px`, S.imgW/2, S.imgH/2 + 20);
+          ctx.fillText('Calibração Padrão', S.imgW/2, S.imgH/2 + 50);
+          
+          img.src = canvas.toDataURL();
+          img.onload = () => {
+            S.railLeftX = 0;
+            S.railRightX = Math.max(0, S.imgW - 1080);
+            render();
+          };
         };
       }
     }
