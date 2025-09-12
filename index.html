@@ -160,33 +160,33 @@
         /* Área de Interação Específica */
         .interaction-area {
             position: absolute;
-            width: 400px;
-            height: 400px;
+            width: 50px; /* 50cm de largura */
+            height: 50px; /* 50cm de altura */
             background: rgba(255, 0, 0, 0.3);
             border: 3px solid #ff0000;
-            border-radius: 20px;
+            border-radius: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 20;
             transform-origin: center center;
-            /* Posição inicial: 100cm, 220cm (convertido para pixels) */
-            left: 100px; /* 100cm = 100px para teste */
+            /* Posição: de 150cm a 200cm (largura 50cm) */
+            left: 150px; /* 150cm = 150px para teste */
             top: 220px;  /* 220cm = 220px para teste */
         }
 
         .interaction-icon {
-            font-size: 80px;
+            font-size: 30px;
             animation: blink 1s infinite;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         }
 
         .interaction-text {
-            font-size: 24px;
+            font-size: 8px;
             font-weight: bold;
             color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
         @keyframes blink {
@@ -203,7 +203,7 @@
         <div class="interaction-area" id="interactionArea" onclick="interactWithArea()">
             <div class="interaction-icon">🎯</div>
             <div class="interaction-text">Área de Teste</div>
-        </div>
+                    </div>
                         </div>
                         
     <div class="controls">
