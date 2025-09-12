@@ -32,7 +32,7 @@ udpServer.on('message', (msg, rinfo) => {
         }
         
         if (value !== null && !isNaN(value)) {
-            // Limitar a 3 casas decimais
+            // ARREDONDAR PRIMEIRO para 3 casas decimais, DEPOIS processar
             let normalizedValue = parseFloat(value.toFixed(3));
             
             // Normalizar valor para 0-1 se for maior que 1 (assumindo que valores > 1 são em centímetros)
