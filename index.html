@@ -171,9 +171,13 @@
             justify-content: center;
             z-index: 20;
             transform-origin: center center;
-            /* Posição: de 150cm a 200cm (largura 50cm) */
-            left: 150px; /* 150cm = 150px para teste */
-            top: 220px;  /* 220cm = 220px para teste */
+            /* Cálculo correto baseado na grade:
+               - Cada quadrado = 10cm x 10cm
+               - 150cm = quadrado 15 (15 x 10cm = 150cm)
+               - Posição left 658px encontrada manualmente para alinhar corretamente
+               - Área vai de 150cm a 200cm (largura de 50cm) */
+            left: 658px; /* Posição correta para 150cm */
+            top: 220px;  /* 220cm = 220px */
         }
 
         .interaction-icon {
