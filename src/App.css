@@ -1,0 +1,456 @@
+/* Reset e configurações base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #1a1a1a;
+  color: #ffffff;
+  overflow: hidden;
+  height: 100vh;
+}
+
+.app {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Viewport Principal */
+.main-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #1a1a1a;
+  overflow: hidden;
+}
+
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform-origin: center center;
+  transition: transform 0.1s ease-out;
+}
+
+/* Áreas de Interação */
+.interaction-area {
+  position: absolute;
+  background: rgba(255, 0, 0, 0.3);
+  border: 3px solid #ff0000;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transform-origin: center center;
+  cursor: move;
+  user-select: none;
+  transition: all 0.1s ease;
+}
+
+.interaction-area:hover {
+  border-color: #ffff00;
+  box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+}
+
+.interaction-area.dragging {
+  cursor: grabbing;
+  z-index: 30;
+  transform: scale(1.1);
+}
+
+.interaction-area.editing {
+  border-color: #00ff00;
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+}
+
+.interaction-icon {
+  font-size: 30px;
+  animation: blink 1s infinite;
+  margin-bottom: 5px;
+}
+
+.interaction-text {
+  font-size: 8px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+/* Editor Inline */
+.interaction-editor {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #00ff00;
+  border-radius: 8px;
+  padding: 10px;
+  z-index: 40;
+  min-width: 200px;
+}
+
+.interaction-editor input,
+.interaction-editor textarea {
+  width: 100%;
+  padding: 5px;
+  margin: 5px 0;
+  border: 1px solid #555;
+  background: #222;
+  color: white;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.interaction-editor button {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  margin: 2px;
+  font-size: 11px;
+}
+
+/* Painel de Controle */
+.control-panel {
+  width: 300px;
+  background: rgba(42, 42, 42, 0.95);
+  border: 1px solid #444;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.control-panel.collapsed {
+  width: 50px;
+  overflow: hidden;
+}
+
+.control-panel.collapsed .panel-content {
+  display: none;
+}
+
+.control-panel.collapsed .panel-header h1 {
+  display: none;
+}
+
+.control-panel.dragging {
+  z-index: 1001 !important;
+}
+
+.panel-header {
+  background: rgba(26, 26, 26, 0.9);
+  padding: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  cursor: move;
+  user-select: none;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+}
+
+.panel-header::before {
+  content: '⋮⋮';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #666;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.panel-header h1 {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  font-size: 1rem;
+  color: #fff;
+  cursor: move;
+}
+
+.panel-content {
+  padding: 0.8rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-height: 60vh;
+}
+
+.toggle-panel {
+  background: #555;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.toggle-panel:hover {
+  background: #666;
+}
+
+.control-panel.collapsed .toggle-panel {
+  transform: rotate(180deg);
+}
+
+/* Seções */
+.section {
+  background: #333;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #555;
+}
+
+.section h3 {
+  color: #007acc;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+/* Controles */
+.control-group {
+  margin-bottom: 1rem;
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #333;
+  border-radius: 10px;
+  outline: none;
+  height: 6px;
+}
+
+.control-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #4CAF50;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.control-group input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #4CAF50;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.control-group input[type="number"] {
+  width: 80px;
+  padding: 0.25rem 0.5rem;
+  background: #444;
+  border: 1px solid #666;
+  border-radius: 3px;
+  color: white;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.control-group input[type="number"]:focus {
+  outline: none;
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+/* Botões */
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #007acc;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #005a9e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.btn-secondary {
+  background: #444;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #555;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Slider de Posição */
+.position-slider {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 40px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 20px;
+  padding: 5px;
+  z-index: 100;
+}
+
+.position-slider input {
+  width: 100%;
+  height: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+
+.position-slider input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 30px;
+  height: 30px;
+  background: #4CAF50;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.position-slider input::-moz-range-thumb {
+  width: 30px;
+  height: 30px;
+  background: #4CAF50;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Display de Posição */
+.position-display {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 18px;
+  z-index: 100;
+}
+
+/* Overlay de Instruções */
+.instructions-overlay {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 50;
+  text-align: center;
+  max-width: 600px;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2a2a2a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .control-panel {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .position-slider {
+    width: 90%;
+  }
+  
+  .position-display {
+    font-size: 14px;
+    padding: 8px;
+  }
+}
+

@@ -1,19 +1,34 @@
 {
-  "name": "trilho_web",
-  "version": "1.0.0",
-  "description": "Uma aplicação web interativa que transforma uma TV vertical de 42\" em uma \"janela digital\" que se move sobre um trilho físico, criando a sensação de realidade aumentada física + digital.",
-  "main": "app.js",
+  "name": "trilho-digital-modern",
+  "version": "2.0.0",
+  "description": "Sistema moderno de calibração e controle de trilho digital",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "udp": "node udp-bridge.js",
-    "dev": "node server.js & node udp-bridge.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0",
-    "ws": "^8.18.3"
-  }
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "framer-motion": "^10.16.4",
+    "react-hotkeys-hook": "^4.4.1",
+    "react-draggable": "^4.4.6",
+    "react-resizable": "^3.0.5",
+    "zustand": "^4.4.6",
+    "react-use": "^17.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.5.0",
+    "express": "^4.18.2",
+    "ws": "^8.14.2"
+  },
+  "keywords": ["trilho", "digital", "calibração", "react", "typescript"],
+  "author": "Trilho Digital Team",
+  "license": "MIT"
 }
