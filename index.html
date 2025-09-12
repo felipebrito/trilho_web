@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilho Digital - Calibração e Controle</title>
+    <link rel="stylesheet" href="styles.css?v=36">
+</head>
+<body>
+    <div id="app">
+        <!-- Painel de Controle -->
+        <div class="control-panel" id="control-panel">
+            <div class="panel-header">
+                <h1>Trilho Digital</h1>
+                <button class="toggle-panel" id="toggle-panel">◀</button>
+            </div>
+            <div class="panel-content">
+            
+            <!-- Upload de Imagem -->
+            <div class="section">
+                <h3>Imagem de Fundo</h3>
+                <input type="file" id="image-upload" accept="image/*">
+                <div id="image-preview" class="image-preview">
+                    <span>Nenhuma imagem carregada</span>
+                </div>
+            </div>
+            
+            <!-- Controles de Calibração -->
+            <div class="section">
+                <h3>Calibração</h3>
+                
+                <div class="control-group">
+                    <label for="scale-slider">Escala:</label>
+                    <div class="control-row">
+                        <button class="btn-micro" onclick="adjustScale(-0.001)">-0.001</button>
+                        <button class="btn-micro" onclick="adjustScale(-0.01)">-0.01</button>
+                        <input type="range" id="scale-slider" min="0.1" max="3" step="0.001" value="1">
+                        <button class="btn-micro" onclick="adjustScale(0.01)">+0.01</button>
+                        <button class="btn-micro" onclick="adjustScale(0.001)">+0.001</button>
+                    </div>
+                    <div class="control-row">
+                        <input type="number" id="scale-input" min="0.1" max="3" step="0.001" value="1" class="number-input">
+                        <span id="scale-value">1.000</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="offset-x">Posição X:</label>
+                    <div class="control-row">
+                        <button class="btn-micro" onclick="adjustOffsetX(-0.1)">-0.1</button>
+                        <button class="btn-micro" onclick="adjustOffsetX(-1)">-1</button>
+                        <input type="range" id="offset-x" min="-3500" max="3500" step="0.1" value="0">
+                        <button class="btn-micro" onclick="adjustOffsetX(1)">+1</button>
+                        <button class="btn-micro" onclick="adjustOffsetX(0.1)">+0.1</button>
+                    </div>
+                    <div class="control-row">
+                        <input type="number" id="offset-x-input" min="-3500" max="3500" step="0.1" value="0" class="number-input">
+                        <span id="offset-x-value">0.0</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="offset-y">Posição Y:</label>
+                    <div class="control-row">
+                        <button class="btn-micro" onclick="adjustOffsetY(-0.1)">-0.1</button>
+                        <button class="btn-micro" onclick="adjustOffsetY(-1)">-1</button>
+                        <input type="range" id="offset-y" min="-3500" max="3500" step="0.1" value="0">
+                        <button class="btn-micro" onclick="adjustOffsetY(1)">+1</button>
+                        <button class="btn-micro" onclick="adjustOffsetY(0.1)">+0.1</button>
+                    </div>
+                    <div class="control-row">
+                        <input type="number" id="offset-y-input" min="-3500" max="3500" step="0.1" value="0" class="number-input">
+                        <span id="offset-y-value">0.0</span>
+                    </div>
+                </div>
+                
+                <div class="quick-controls">
+                    <button onclick="resetCalibration()" class="btn-small">Reset</button>
+                    <button onclick="centerImage()" class="btn-small">Centralizar</button>
+                    <button onclick="fitToScreen()" class="btn-small">Ajustar à Tela</button>
+                </div>
+                
+                <div class="calibration-presets">
+                    <h4>Calibração Rápida:</h4>
+                    <button onclick="testarCalibracao()" class="btn-preset btn-primary">🎯 TESTAR CALIBRAÇÃO</button>
+                    <button onclick="aplicarValores()" class="btn-preset">✅ APLICAR VALORES</button>
+                </div>
+            </div>
+            
+            <!-- Modo de Calibração -->
+            <div class="section">
+                <h3>Modo de Calibração</h3>
+                <div class="control-group">
+                    <button onclick="enableCalibrationMode()" class="btn-preset btn-primary">🎯 Modo Calibração</button>
+                    <button onclick="autoCalibrateFromImage()" class="btn-preset">🔧 Auto Calibrar</button>
+                    <button onclick="saveCalibration()" class="btn-preset">💾 Salvar</button>
+                </div>
+            </div>
+
+            <!-- Controle Manual -->
+            <div class="section">
+                <h3>Controle Manual</h3>
+                <div class="control-group">
+                    <label for="position-slider">Posição:</label>
+                    <input type="range" id="position-slider" min="0" max="200" step="0.1" value="0">
+                    <span id="position-value">0.0%</span>
+                    <input type="number" id="position-input" min="0" max="200" step="0.1" value="0" placeholder="Digite o valor exato">
+                </div>
+                <div class="manual-controls">
+                    <button onclick="setPosition(0)" class="btn-small">Início</button>
+                    <button onclick="setPosition(25)" class="btn-small">25%</button>
+                    <button onclick="setPosition(50)" class="btn-small">50%</button>
+                    <button onclick="setPosition(75)" class="btn-small">75%</button>
+                    <button onclick="setPosition(100)" class="btn-small">100%</button>
+                    <button onclick="setPosition(150)" class="btn-small">150%</button>
+                    <button onclick="setPosition(200)" class="btn-small">200%</button>
+                </div>
+            </div>
+            
+            <!-- Status UDP -->
+            <div class="section">
+                <h3>Status</h3>
+                <div class="status-info">
+                    <div>UDP: <span id="udp-status">Desconectado</span></div>
+                    <div>Posição: <span id="current-position">0.00</span> cm</div>
+                    <div>Encoder: <span id="encoder-value">0.00</span></div>
+                </div>
+            </div>
+            
+            <!-- Salvar/Carregar -->
+            <div class="section">
+                <button id="save-config" class="btn btn-primary">Salvar Configuração</button>
+                <button id="load-config" class="btn btn-secondary">Carregar Configuração</button>
+                <input type="file" id="config-upload" accept=".json" style="display: none;">
+            </div>
+            </div>
+        </div>
+        
+        <!-- Viewport Principal -->
+        <div class="main-viewport">
+            <div id="viewport-container" class="viewport-container">
+                <div id="background-image" class="background-image"></div>
+                <div id="viewport-overlay" class="viewport-overlay">
+                    <div class="viewport-border"></div>
+                    <div class="viewport-info">
+                        <span>Área Visível (TV)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="udp-client.js?v=40"></script>
+    <script>
+        function testarCalibracao() {
+            console.log('🎯 Carregando imagem de calibração...');
+            
+            const img = document.getElementById('background-image');
+            if (!img) {
+                console.error('❌ Elemento não encontrado!');
+                return;
+            }
+            
+            // Reset e configurar corretamente
+            img.style.cssText = '';
+            img.className = 'background-image';
+            
+            // Estilos corretos
+            img.style.display = 'block';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.position = 'absolute';
+            img.style.top = '0';
+            img.style.left = '0';
+            img.style.zIndex = '1';
+            img.style.backgroundSize = 'cover';
+            img.style.backgroundPosition = 'center';
+            img.style.backgroundRepeat = 'no-repeat';
+            
+            // Carregar imagem
+            img.src = 'editor/bg300x200-comtv.jpg';
+            
+            img.onload = function() {
+                console.log('✅ Imagem carregada!');
+                aplicarValores();
+            };
+            
+            img.onerror = function() {
+                console.log('❌ Imagem não encontrada, usando placeholder...');
+                img.src = 'https://via.placeholder.com/1920x1080/ff0000/ffffff?text=IMAGEM+DE+CALIBRACAO';
+                img.onload = function() {
+                    aplicarValores();
+                };
+            };
+        }
+        
+        function aplicarValores() {
+            console.log('✅ Aplicando valores...');
+            
+            // Aplicar valores que funcionam
+            document.getElementById('scale-slider').value = 0.542;
+            document.getElementById('offset-x').value = -2593;
+            document.getElementById('offset-y').value = -2272;
+            
+            // Atualizar displays
+            document.getElementById('scale-value').textContent = '0.542';
+            document.getElementById('offset-x-value').textContent = '-2593.0';
+            document.getElementById('offset-y-value').textContent = '-2272.0';
+            
+            // Aplicar transform na imagem
+            const img = document.getElementById('background-image');
+            img.style.transform = 'translate(-2593px, -2272px) scale(0.542)';
+            
+            console.log('✅ Valores aplicados!');
+        }
+        
+        // Função para mover a imagem
+        function moverImagem() {
+            console.log('🎯 moverImagem chamada!');
+            const position = document.getElementById('position-slider').value;
+            const img = document.getElementById('background-image');
+            
+            console.log('🔄 Movendo para posição:', position + '%');
+            console.log(' Imagem encontrada:', img);
+            
+            // Calcular movimento
+            const maxMovement = 1000; // Movimento máximo
+            const horizontalOffset = (position / 100) * maxMovement;
+            
+            console.log(' Cálculos:', {
+                position: position,
+                maxMovement: maxMovement,
+                horizontalOffset: horizontalOffset
+            });
+            
+            // Aplicar transform com movimento
+            const transform = `translate(${-2593 - horizontalOffset}px, -2272px) scale(0.542)`;
+            console.log(' Aplicando transform:', transform);
+            img.style.transform = transform;
+            
+            // Atualizar display
+            document.getElementById('position-value').textContent = position + '%';
+            
+            console.log('✅ Movimento aplicado!');
+        }
+        
+        // Conectar slider de posição
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Conectando slider de posição...');
+            const positionSlider = document.getElementById('position-slider');
+            console.log('🔍 Slider encontrado:', positionSlider);
+            
+            if (positionSlider) {
+                positionSlider.addEventListener('input', moverImagem);
+                console.log('✅ Event listener adicionado!');
+            } else {
+                console.error('❌ Slider não encontrado!');
+            }
+        });
+        
+        // Fallback: conectar imediatamente se DOM já estiver carregado
+        setTimeout(function() {
+            const positionSlider = document.getElementById('position-slider');
+            if (positionSlider && !positionSlider.hasAttribute('data-connected')) {
+                console.log('🔍 Conectando slider (fallback)...');
+                positionSlider.addEventListener('input', moverImagem);
+                positionSlider.setAttribute('data-connected', 'true');
+                console.log('✅ Event listener adicionado (fallback)!');
+            }
+        }, 1000);
+        
+        window.enableCalibrationMode = testarCalibracao;
+        window.autoCalibrateFromImage = aplicarValores;
+        window.saveCalibration = function() {
+            console.log('💾 Salvando calibração...');
+            localStorage.setItem('trilho_calibration', JSON.stringify({
+                scale: 0.542,
+                offsetX: -2593,
+                offsetY: -2272,
+                timestamp: new Date().toISOString()
+            }));
+            console.log('✅ Calibração salva!');
+        };
+        
+        console.log('✅ Funções carregadas!');
+    </script>
+</body>
+</html>

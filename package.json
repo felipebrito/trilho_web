@@ -1,0 +1,15 @@
+{
+  "name": "trilho_web",
+  "version": "1.0.0",
+  "description": "Uma aplicação web interativa que transforma uma TV vertical de 42\" em uma \"janela digital\" que se move sobre um trilho físico, criando a sensação de realidade aumentada física + digital.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

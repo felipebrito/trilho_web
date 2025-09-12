@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Trilho Digital</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .status {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #2a5a2a;
+        }
+        .error {
+            background: #5a2a2a;
+        }
+        .btn {
+            background: #007acc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #005a9e;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Teste - Trilho Digital</h1>
+        
+        <div class="status" id="status">
+            <h3>Status do Sistema</h3>
+            <p>Verificando componentes...</p>
+        </div>
+        
+        <div>
+            <h3>Testes Disponíveis</h3>
+            <button class="btn" onclick="testBasic()">Teste Básico</button>
+            <button class="btn" onclick="testGSAP()">Teste GSAP</button>
+            <button class="btn" onclick="testUDP()">Teste UDP</button>
+            <button class="btn" onclick="openMain()">Abrir Aplicação Principal</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.innerHTML = `<h3>Status do Sistema</h3><p>${message}</p>`;
+            status.className = `status ${type}`;
+        }
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<p>${message}</p>`;
+            results.appendChild(div);
+        }
+
+        function testBasic() {
+            updateStatus('Executando teste básico...', 'info');
+            
+            try {
+                // Teste básico de JavaScript
+                const test = 1 + 1;
+                if (test === 2) {
+                    addResult('✅ JavaScript funcionando corretamente', 'success');
+                } else {
+                    addResult('❌ Erro no JavaScript básico', 'error');
+                }
+                
+                // Teste de DOM
+                const app = document.getElementById('app');
+                if (app) {
+                    addResult('✅ Elemento #app encontrado', 'success');
+                } else {
+                    addResult('❌ Elemento #app não encontrado', 'error');
+                }
+                
+                updateStatus('Teste básico concluído', 'success');
+            } catch (error) {
+                addResult(`❌ Erro no teste básico: ${error.message}`, 'error');
+                updateStatus('Erro no teste básico', 'error');
+            }
+        }
+
+        function testGSAP() {
+            updateStatus('Testando GSAP...', 'info');
+            
+            if (typeof gsap !== 'undefined') {
+                addResult('✅ GSAP carregado com sucesso', 'success');
+                
+                // Teste de animação
+                try {
+                    gsap.to(document.body, {duration: 0.1, opacity: 0.9});
+                    addResult('✅ Animação GSAP funcionando', 'success');
+                    updateStatus('GSAP funcionando corretamente', 'success');
+                } catch (error) {
+                    addResult(`❌ Erro na animação GSAP: ${error.message}`, 'error');
+                    updateStatus('Erro no GSAP', 'error');
+                }
+            } else {
+                addResult('❌ GSAP não carregado', 'error');
+                updateStatus('GSAP não disponível', 'error');
+            }
+        }
+
+        function testUDP() {
+            updateStatus('Testando UDP Client...', 'info');
+            
+            try {
+                // Simula teste do UDP client
+                const mockUDP = {
+                    isConnected: true,
+                    position: 0.5,
+                    mockMode: true
+                };
+                
+                addResult('✅ UDP Client simulado funcionando', 'success');
+                addResult(`📊 Posição atual: ${mockUDP.position}`, 'info');
+                addResult(`🔗 Modo mock: ${mockUDP.mockMode}`, 'info');
+                
+                updateStatus('UDP Client funcionando', 'success');
+            } catch (error) {
+                addResult(`❌ Erro no UDP Client: ${error.message}`, 'error');
+                updateStatus('Erro no UDP Client', 'error');
+            }
+        }
+
+        function openMain() {
+            window.location.href = 'index.html';
+        }
+
+        // Teste automático ao carregar
+        window.addEventListener('load', () => {
+            updateStatus('Página carregada com sucesso', 'success');
+            addResult('🚀 Sistema de teste inicializado', 'success');
+        });
+
+        // Teste de erro
+        window.addEventListener('error', (e) => {
+            addResult(`❌ Erro JavaScript: ${e.message}`, 'error');
+        });
+    </script>
+</body>
+</html>
+

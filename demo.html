@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilho Digital - Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .demo-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .demo-button {
+            display: inline-block;
+            background: #007acc;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 1rem 0;
+            font-weight: bold;
+        }
+        .demo-button:hover {
+            background: #005a9e;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #007acc;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #f8f8f8;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 1rem 0;
+            border-left: 4px solid #007acc;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🎯 Trilho Digital - Aplicação Web Interativa</h1>
+        
+        <p>Esta aplicação transforma uma TV vertical de 42" em uma "janela digital" que se move sobre um trilho físico, criando a sensação de realidade aumentada física + digital.</p>
+        
+        <h2>🚀 Como Começar</h2>
+        <p>Clique no botão abaixo para abrir a aplicação:</p>
+        <a href="index.html" class="demo-button">Abrir Aplicação Principal</a>
+        
+        <h2>✨ Funcionalidades Implementadas</h2>
+        <ul class="feature-list">
+            <li>Editor de calibração com upload de imagem</li>
+            <li>Controles precisos de escala e posicionamento</li>
+            <li>Salvamento e carregamento de configurações (JSON)</li>
+            <li>Simulação UDP para desenvolvimento (modo mock)</li>
+            <li>Viewport com movimento horizontal suave</li>
+            <li>Conteúdos digitais interativos (hotspots, textos, vídeos)</li>
+            <li>Animações fluidas com GSAP</li>
+            <li>Layout otimizado para TV vertical (9:16)</li>
+            <li>Interface responsiva e moderna</li>
+            <li>Controles de teclado para navegação</li>
+            <li>Modo debug para desenvolvimento</li>
+        </ul>
+        
+        <h2>🎮 Controles de Teclado</h2>
+        <div class="code-block">
+Ctrl/Cmd + E  → Modo Editor<br>
+Ctrl/Cmd + R  → Modo Execução<br>
+Espaço        → Pausar/Retomar animação<br>
+← →          → Controlar posição manualmente
+        </div>
+        
+        <h2>🔧 Configuração Técnica</h2>
+        <ul>
+            <li><strong>TV:</strong> 42", FullHD, posição vertical</li>
+            <li><strong>Trilho:</strong> 300cm de comprimento</li>
+            <li><strong>Encoder:</strong> Valores normalizados 0-1 via UDP (porta 8888)</li>
+            <li><strong>Área Física:</strong> 300cm x 200cm</li>
+            <li><strong>Viewport:</strong> 93.5cm x 52.5cm</li>
+        </ul>
+        
+        <h2>📋 Fluxo de Uso</h2>
+        <ol>
+            <li><strong>Modo Editor:</strong> Importe a arte impressa e calibre a posição/escala</li>
+            <li><strong>Salvar:</strong> Salve a configuração para uso posterior</li>
+            <li><strong>Modo Execução:</strong> Teste o movimento da viewport sobre a arte</li>
+            <li><strong>Interação:</strong> Clique nos hotspots para ver conteúdos digitais</li>
+        </ol>
+        
+        <h2>🛠️ Desenvolvimento</h2>
+        <p>A aplicação inclui:</p>
+        <ul>
+            <li>Modo mock para desenvolvimento sem hardware</li>
+            <li>Painel de debug com informações em tempo real</li>
+            <li>API para controle externo da posição</li>
+            <li>Sistema modular e extensível</li>
+        </ul>
+        
+        <h2>📁 Arquivos do Projeto</h2>
+        <div class="code-block">
+index.html      → Interface principal<br>
+styles.css      → Estilos e layout<br>
+app.js          → Aplicação principal<br>
+editor.js       → Editor de calibração<br>
+viewport.js     → Sistema de viewport<br>
+udp-client.js   → Cliente UDP (mock)<br>
+README.md       → Documentação completa
+        </div>
+        
+        <p><strong>Nota:</strong> Esta é uma aplicação web completa e funcional. Para usar com hardware real, configure o cliente UDP para receber dados do encoder físico.</p>
+    </div>
+</body>
+</html>
+

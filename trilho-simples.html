@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilho Digital</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #222;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .controls {
+            width: 250px;
+            background: #333;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .viewport {
+            flex: 1;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            /* Forçar aspecto 16:9 para imagem 300x200cm */
+            aspect-ratio: 16/9;
+            max-height: 100vh;
+        }
+        
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transform-origin: center center;
+        }
+        
+        .useful-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 56.25%; /* 9:16 aspect ratio */
+            height: 100%;
+            transform: translate(-50%, -50%);
+            border: 3px solid red;
+            background: rgba(255, 0, 0, 0.1);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #444;
+            border-radius: 5px;
+        }
+        
+        .section h3 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+            font-size: 14px;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .control-group input[type="number"] {
+            width: 100%;
+            padding: 3px;
+            border: 1px solid #555;
+            background: #222;
+            color: white;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 12px;
+        }
+        
+        .btn:hover { background: #45a049; }
+        
+        .file-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px dashed #555;
+            border-radius: 3px;
+            background: #222;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .value-display {
+            font-size: 11px;
+            color: #ccc;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <div class="section">
+                <h3>📁 Imagem</h3>
+                <input type="file" id="imageFile" class="file-input" accept="image/*">
+                <div class="value-display" id="imageStatus">Nenhuma imagem</div>
+            </div>
+
+            <div class="section">
+                <h3>🎯 Calibração</h3>
+                
+                <div class="control-group">
+                    <label>Escala: <span id="scaleValue">1.0</span></label>
+                    <input type="range" id="scaleSlider" min="0.1" max="2.0" step="0.001" value="1.0">
+                    <input type="number" id="scaleInput" min="0.1" max="2.0" step="0.001" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <label>X: <span id="offsetXValue">0</span></label>
+                    <input type="range" id="offsetXSlider" min="-3000" max="3000" step="1" value="0">
+                    <input type="number" id="offsetXInput" min="-3000" max="3000" step="1" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>Y: <span id="offsetYValue">0</span></label>
+                    <input type="range" id="offsetYSlider" min="-3000" max="3000" step="1" value="0">
+                    <input type="number" id="offsetYInput" min="-3000" max="3000" step="1" value="0">
+                </div>
+
+                <button class="btn" onclick="reset()">Reset</button>
+                <button class="btn" onclick="center()">Centralizar</button>
+            </div>
+
+            <div class="section">
+                <h3>🎮 Posição</h3>
+                <div class="control-group">
+                    <label>Posição: <span id="positionValue">0%</span></label>
+                    <input type="range" id="positionSlider" min="0" max="100" step="0.1" value="0">
+                    <input type="number" id="positionInput" min="0" max="100" step="0.1" value="0">
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>💾 Salvar</h3>
+                <button class="btn" onclick="save()">Salvar Calibração</button>
+                <button class="btn" onclick="load()">Carregar Calibração</button>
+            </div>
+        </div>
+
+        <div class="viewport">
+            <div class="background-image" id="backgroundImage"></div>
+            <div class="useful-area"></div>
+        </div>
+    </div>
+
+    <script>
+        // Estado
+        let config = {
+            imageUrl: '',
+            scale: 1.0,
+            offsetX: 0,
+            offsetY: 0,
+            position: 0
+        };
+
+        // Elementos
+        const backgroundImage = document.getElementById('backgroundImage');
+        const imageFile = document.getElementById('imageFile');
+        const imageStatus = document.getElementById('imageStatus');
+
+        // Sliders
+        const scaleSlider = document.getElementById('scaleSlider');
+        const scaleInput = document.getElementById('scaleInput');
+        const scaleValue = document.getElementById('scaleValue');
+
+        const offsetXSlider = document.getElementById('offsetXSlider');
+        const offsetXInput = document.getElementById('offsetXInput');
+        const offsetXValue = document.getElementById('offsetXValue');
+
+        const offsetYSlider = document.getElementById('offsetYSlider');
+        const offsetYInput = document.getElementById('offsetYInput');
+        const offsetYValue = document.getElementById('offsetYValue');
+
+        const positionSlider = document.getElementById('positionSlider');
+        const positionInput = document.getElementById('positionInput');
+        const positionValue = document.getElementById('positionValue');
+
+        // Inicializar
+        function init() {
+            console.log('🚀 Iniciando...');
+            
+            // Event listeners
+            imageFile.addEventListener('change', loadImage);
+            
+            scaleSlider.addEventListener('input', () => updateScale(scaleSlider.value));
+            scaleInput.addEventListener('input', () => updateScale(scaleInput.value));
+            
+            offsetXSlider.addEventListener('input', () => updateOffsetX(offsetXSlider.value));
+            offsetXInput.addEventListener('input', () => updateOffsetX(offsetXInput.value));
+            
+            offsetYSlider.addEventListener('input', () => updateOffsetY(offsetYSlider.value));
+            offsetYInput.addEventListener('input', () => updateOffsetY(offsetYInput.value));
+            
+            positionSlider.addEventListener('input', () => updatePosition(positionSlider.value));
+            positionInput.addEventListener('input', () => updatePosition(positionInput.value));
+            
+            // Carregar automaticamente
+            loadCalibrationImage();
+            
+            console.log('✅ Pronto!');
+        }
+
+        // Carregar imagem
+        function loadImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                config.imageUrl = e.target.result;
+                backgroundImage.style.backgroundImage = `url(${config.imageUrl})`;
+                imageStatus.textContent = file.name;
+                console.log('✅ Imagem carregada:', file.name);
+                applyTransform();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Atualizar escala
+        function updateScale(value) {
+            config.scale = parseFloat(value);
+            scaleSlider.value = config.scale;
+            scaleInput.value = config.scale;
+            scaleValue.textContent = config.scale.toFixed(3);
+            applyTransform();
+        }
+
+        // Atualizar offset X
+        function updateOffsetX(value) {
+            config.offsetX = parseInt(value);
+            offsetXSlider.value = config.offsetX;
+            offsetXInput.value = config.offsetX;
+            offsetXValue.textContent = config.offsetX;
+            applyTransform();
+        }
+
+        // Atualizar offset Y
+        function updateOffsetY(value) {
+            config.offsetY = parseInt(value);
+            offsetYSlider.value = config.offsetY;
+            offsetYInput.value = config.offsetY;
+            offsetYValue.textContent = config.offsetY;
+            applyTransform();
+        }
+
+        // Atualizar posição
+        function updatePosition(value) {
+            config.position = parseFloat(value);
+            positionSlider.value = config.position;
+            positionInput.value = config.position;
+            positionValue.textContent = config.position + '%';
+            applyTransform();
+        }
+
+        // Aplicar transformação
+        function applyTransform() {
+            if (!config.imageUrl) return;
+
+            // Calcular movimento horizontal
+            const maxMovement = 1000;
+            const horizontalOffset = (config.position / 100) * maxMovement;
+            
+            const translateX = config.offsetX - horizontalOffset;
+            const translateY = config.offsetY;
+            
+            const transform = `scale(${config.scale}) translate(${translateX}px, ${translateY}px)`;
+            backgroundImage.style.transform = transform;
+            
+            console.log('🔄 Posição:', config.position + '%', 'Transform:', transform);
+        }
+
+        // Funções de controle
+        function reset() {
+            config.scale = 1.0;
+            config.offsetX = 0;
+            config.offsetY = 0;
+            config.position = 0;
+            
+            updateScale(1.0);
+            updateOffsetX(0);
+            updateOffsetY(0);
+            updatePosition(0);
+            
+            console.log('🔄 Resetado');
+        }
+
+        function center() {
+            config.offsetX = 0;
+            config.offsetY = 0;
+            
+            updateOffsetX(0);
+            updateOffsetY(0);
+            
+            console.log('🎯 Centralizado');
+        }
+
+        function save() {
+            localStorage.setItem('trilho_calibration', JSON.stringify(config));
+            console.log('💾 Calibração salva');
+        }
+
+        function load() {
+            const saved = localStorage.getItem('trilho_calibration');
+            if (saved) {
+                config = JSON.parse(saved);
+                updateScale(config.scale);
+                updateOffsetX(config.offsetX);
+                updateOffsetY(config.offsetY);
+                updatePosition(config.position);
+                console.log('📁 Calibração carregada');
+            }
+        }
+
+        // Carregar imagem de calibração automaticamente
+        function loadCalibrationImage() {
+            console.log('🔍 Carregando imagem de calibração...');
+            
+            // Valores ajustados para encaixar a área vermelha 9:16
+            config.scale = 0.6;
+            config.offsetX = -2000;
+            config.offsetY = -1500;
+            config.position = 0;
+            
+            // Atualizar controles
+            updateScale(0.6);
+            updateOffsetX(-2000);
+            updateOffsetY(-1500);
+            updatePosition(0);
+            
+            // Carregar imagem
+            config.imageUrl = 'editor/bg300x200-comtv.jpg';
+            backgroundImage.style.backgroundImage = `url(${config.imageUrl})`;
+            imageStatus.textContent = 'Imagem de calibração carregada';
+            
+            console.log('✅ Imagem e valores aplicados automaticamente');
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
