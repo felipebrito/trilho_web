@@ -24,7 +24,7 @@ udpServer.on('message', (msg, rinfo) => {
         if (match) {
             value = parseFloat(match[1]);
         } else {
-            // Tentar apenas número
+            // Tentar apenas número (incluindo números com muitas casas decimais)
             const numberMatch = data.match(/^([\d.]+)$/);
             if (numberMatch) {
                 value = parseFloat(numberMatch[1]);
@@ -32,11 +32,13 @@ udpServer.on('message', (msg, rinfo) => {
         }
         
         if (value !== null && !isNaN(value)) {
+            // Limitar a 3 casas decimais
+            let normalizedValue = parseFloat(value.toFixed(3));
+            
             // Normalizar valor para 0-1 se for maior que 1 (assumindo que valores > 1 são em centímetros)
-            let normalizedValue = value;
-            if (value > 1) {
+            if (normalizedValue > 1) {
                 // Se o valor for maior que 1, assumir que é em centímetros (0-300cm)
-                normalizedValue = Math.max(0, Math.min(1, value / 300));
+                normalizedValue = Math.max(0, Math.min(1, normalizedValue / 300));
                 console.log(`📏 Convertendo ${value}cm para ${normalizedValue.toFixed(3)} (normalizado)`);
             }
             
