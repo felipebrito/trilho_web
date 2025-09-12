@@ -12,19 +12,26 @@ export const useUDP = () => {
   const { udp, setUDPConnected, setPosition } = useAppStore();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isEnabledRef = useRef<boolean>(udp.enabled);
 
   useEffect(() => {
+    // Atualizar ref com estado atual
+    isEnabledRef.current = udp.enabled;
+    
+    // Sempre limpar conexões existentes primeiro
+    if (wsRef.current) {
+      console.log('🔌 Fechando conexão WebSocket existente');
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
     if (!udp.enabled) {
       // Desconectar se UDP foi desabilitado
-      console.log('🔌 Desabilitando UDP - fechando conexões');
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
+      console.log('🔌 UDP desabilitado - conexões fechadas');
       setUDPConnected(false);
       return;
     }
@@ -37,7 +44,7 @@ export const useUDP = () => {
         
         wsRef.current.onopen = () => {
           // Verificar se UDP ainda está habilitado após conectar
-          if (!udp.enabled) {
+          if (!isEnabledRef.current) {
             console.log('⚠️ UDP foi desabilitado durante conexão, fechando');
             if (wsRef.current) {
               wsRef.current.close();
@@ -51,7 +58,7 @@ export const useUDP = () => {
         
         wsRef.current.onmessage = (event) => {
           // Verificar se UDP ainda está habilitado antes de processar
-          if (!udp.enabled) {
+          if (!isEnabledRef.current) {
             console.log('⚠️ UDP desabilitado, ignorando dados recebidos');
             return;
           }
@@ -73,8 +80,8 @@ export const useUDP = () => {
           console.log('🔌 UDP WebSocket desconectado');
           setUDPConnected(false);
           
-          // Tentar reconectar após 3 segundos
-          if (udp.enabled) {
+          // Tentar reconectar após 3 segundos apenas se UDP ainda estiver habilitado
+          if (isEnabledRef.current) {
             reconnectTimeoutRef.current = setTimeout(() => {
               console.log('🔄 Tentando reconectar UDP...');
               connectWebSocket();
@@ -84,7 +91,7 @@ export const useUDP = () => {
         
         wsRef.current.onerror = (error) => {
           // Só logar erro se UDP ainda estiver habilitado
-          if (udp.enabled) {
+          if (isEnabledRef.current) {
             console.error('❌ Erro na conexão UDP:', error);
           }
           setUDPConnected(false);
