@@ -86,7 +86,7 @@
 <body>
   <div id="tv">
     <div id="opHUD" class="opHUD hidden">
-      • pos <span id="opPos">0</span>% — • tecla <b>C</b> para mostrar Controles
+      • pos <span id="opPos">0</span>% — • tecla <b>C</b> para mostrar Controles — • <b>Alt+Setas</b> para mover offsets
     </div>
     <img id="img" alt="arte" />
     <div id="grid" class="grid"></div>
@@ -138,6 +138,7 @@
         <button class="bg-white text-black px-4 py-2" id="clear">Limpar preset</button>
         <button class="bg-green-500 text-white px-4 py-2" id="reset">Reset Padrão</button>
         <button class="bg-blue-500 text-white px-4 py-2" id="findLimits">Encontrar Limites</button>
+        <button class="bg-purple-500 text-white px-4 py-2" id="autoAdjust">Auto-Ajuste</button>
         <button class="bg-white text-black px-4 py-2" id="toggleMode"><span id="modeLabel">Controles</span> (C)</button>
       </div>
     </div>
@@ -194,6 +195,7 @@
     const clearBtn = $('clear');
     const resetBtn = $('reset');
     const findLimitsBtn = $('findLimits');
+    const autoAdjustBtn = $('autoAdjust');
 
     const LSKEY = 'tv_cal_preset_v1';
     const MODEKEY = 'tv_mode_v1';
@@ -265,6 +267,124 @@
       
       testNextPosition();
     }
+    
+    function autoAdjust(){
+      console.log('🎯 Iniciando auto-ajuste baseado no retângulo vermelho...');
+      
+      // Parâmetros para auto-ajuste
+      const viewportWidth = 1080;
+      const viewportHeight = 1920;
+      const targetScale = 0.361; // Escala conhecida que funciona
+      
+      // Reset para posição inicial conhecida
+      S.scale = targetScale;
+      S.offX = -1.12488;
+      S.offY = -542.793;
+      S.pos = 0;
+      
+      // Atualizar UI
+      updateUI();
+      render();
+      
+      console.log('📍 Posição inicial configurada:');
+      console.log(`   - Escala: ${(S.scale*100).toFixed(1)}%`);
+      console.log(`   - Offset X: ${S.offX}px`);
+      console.log(`   - Offset Y: ${S.offY}px`);
+      console.log(`   - Posição: ${S.pos}%`);
+      
+      // Calcular limites baseados na imagem real
+      const imageWidth = S.imgW;
+      const imageHeight = S.imgH;
+      const maxMovement = imageWidth - viewportWidth;
+      
+      // Ajustar railRightX baseado no movimento real
+      S.railRightX = maxMovement;
+      
+      console.log('📏 Limites calculados:');
+      console.log(`   - Imagem: ${imageWidth}×${imageHeight}px`);
+      console.log(`   - Trilho: ${S.railLeftX} - ${S.railRightX}px`);
+      console.log(`   - Movimento máximo: ${maxMovement}px`);
+      
+      // Testar posição final (100%)
+      S.pos = 100;
+      pos.value = 100;
+      render();
+      
+      const finalTranslateX = (-S.pos/100 * (S.railRightX - S.railLeftX)) + S.offX;
+      console.log(`📍 Posição final (100%): translateX ${finalTranslateX.toFixed(2)}px`);
+      
+      // Voltar para posição inicial
+      S.pos = 0;
+      pos.value = 0;
+      render();
+      
+      console.log('✅ Auto-ajuste concluído! Use as setas para testar o movimento.');
+    }
+    
+    function smartAutoAdjust(){
+      console.log('🧠 Iniciando auto-ajuste inteligente...');
+      
+      // Parâmetros conhecidos que funcionam
+      const workingParams = {
+        scale: 0.361,
+        offX: -1.12488,
+        offY: -542.793,
+        pos: 0
+      };
+      
+      // Aplicar parâmetros conhecidos
+      S.scale = workingParams.scale;
+      S.offX = workingParams.offX;
+      S.offY = workingParams.offY;
+      S.pos = workingParams.pos;
+      
+      // Calcular trilho baseado na imagem real
+      const imageWidth = S.imgW;
+      const imageHeight = S.imgH;
+      const viewportWidth = 1080;
+      
+      // O retângulo vermelho deve se encaixar perfeitamente na viewport
+      // Isso significa que o movimento máximo é a largura da imagem menos a viewport
+      S.railLeftX = 0;
+      S.railRightX = imageWidth - viewportWidth;
+      
+      // Atualizar UI
+      updateUI();
+      render();
+      
+      console.log('🎯 Parâmetros aplicados:');
+      console.log(`   - Escala: ${(S.scale*100).toFixed(1)}%`);
+      console.log(`   - Offset X: ${S.offX}px`);
+      console.log(`   - Offset Y: ${S.offY}px`);
+      console.log(`   - Trilho: ${S.railLeftX} - ${S.railRightX}px`);
+      console.log(`   - Movimento: ${S.railRightX - S.railLeftX}px`);
+      
+      // Testar movimento completo
+      console.log('🔄 Testando movimento completo...');
+      
+      // Posição inicial (retângulo vermelho alinhado)
+      S.pos = 0;
+      pos.value = 0;
+      render();
+      console.log(`📍 Posição 0%: translateX ${((-S.pos/100 * (S.railRightX - S.railLeftX)) + S.offX).toFixed(2)}px`);
+      
+      // Posição final (lado direito da imagem alinhado)
+      S.pos = 100;
+      pos.value = 100;
+      render();
+      console.log(`📍 Posição 100%: translateX ${((-S.pos/100 * (S.railRightX - S.railLeftX)) + S.offX).toFixed(2)}px`);
+      
+      // Voltar para início
+      S.pos = 0;
+      pos.value = 0;
+      render();
+      
+      console.log('✅ Auto-ajuste inteligente concluído!');
+      console.log('🎮 Controles disponíveis:');
+      console.log('   - Setas: mover posição no trilho');
+      console.log('   - Alt+Setas: mover offsets (calibração fina)');
+      console.log('   - C: alternar modo calibração/operação');
+    }
 
     function mapPosToImgX(){
       const t = S.pos / 100;
@@ -335,6 +455,7 @@
     clearBtn.addEventListener('click', ()=>{ localStorage.removeItem(LSKEY); alert('Preset limpo.'); });
     resetBtn.addEventListener('click', resetToDefault);
     findLimitsBtn.addEventListener('click', findLimits);
+    autoAdjustBtn.addEventListener('click', smartAutoAdjust);
 
     // Fullscreen opcional
     fs.addEventListener('change', async ()=>{
