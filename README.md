@@ -1,159 +1,180 @@
-# 🎯 Trilho Digital - Sistema de Calibração e Movimento
+# Trilho Digital
 
-Sistema web para calibração e controle de movimento horizontal de imagens de fundo, integrado com dados UDP em tempo real.
+Sistema de calibração e controle de posicionamento de imagens via UDP para aplicações de trilho digital.
 
-## ✨ Funcionalidades
-
-### 🖼️ Calibração Automática
-- **Carregamento automático** da imagem `bg300x200-comtv.jpg` no tamanho correto
-- **Valores pré-configurados** otimizados (escala: 5.72, offsetX: 446, offsetY: 96)
-- **Área útil destacada** com borda vermelha (proporção 9:16)
-- **Controles precisos** para ajuste fino de escala e posição
-
-### 🎮 Controles Intuitivos
-- **Sliders responsivos** com altura aumentada para fácil manipulação
-- **Campos numéricos** com suporte a scroll do mouse para precisão
-- **Botões de ação rápida**:
-  - `Reset` - Volta aos valores padrão
-  - `Centralizar` - Centraliza a imagem
-  - `Encaixar na TV` - Aplica calibração otimizada
-  - `+` / `-` - Zoom in/out
-  - `💾 Salvar` - Salva configuração atual
-  - `🎮 Modo Uso` - Oculta controles para operação
-  - `📡 UDP ON/OFF` - Ativa/desativa recepção de dados
-
-### 📡 Integração UDP Real
-- **Recepção de dados UDP** na porta 8888
-- **Bridge WebSocket** (porta 8889) para comunicação web
-- **Mapeamento correto** do slider (0-100%) para movimento real (0-89%)
-- **Processamento em tempo real** de dados do encoder
-
-### 💾 Persistência
-- **Salvamento automático** de configurações no localStorage
-- **Carregamento** de configurações salvas
-- **Valores padrão** otimizados para a imagem de calibração
-
-## 🚀 Instalação e Uso
-
-### Pré-requisitos
-```bash
-node.js (versão 14 ou superior)
-npm
-```
+## 🚀 Início Rápido
 
 ### Instalação
 ```bash
-# Clone o repositório
-git clone https://github.com/felipebrito/trilho_web.git
-cd trilho_web
-
-# Instale as dependências
 npm install
-
-# Inicie o servidor UDP
-node udp-bridge.js
-
-# Em outro terminal, inicie o servidor web
-npm start
 ```
 
-### Acesso
-- **Interface principal**: `http://localhost:3000/trilho-final.html`
-- **Servidor UDP**: `localhost:8888`
-- **WebSocket**: `localhost:8889`
-
-## 🎯 Como Usar
-
-### 1. Calibração Inicial
-1. Abra `trilho-final.html` no navegador
-2. A imagem já carrega no tamanho correto automaticamente
-3. Use os controles para ajustes finos se necessário
-4. Clique `💾 Salvar` para salvar a configuração
-
-### 2. Modo de Operação
-1. Clique `🎮 Modo Uso` para ocultar controles
-2. Clique `📡 UDP ON` para ativar recepção de dados
-3. A imagem se move automaticamente conforme dados UDP
-
-### 3. Envio de Dados UDP
+### Executar
 ```bash
-# Formato dos dados UDP
-echo "value 0.5" | nc -u localhost 8888
-
-# Ou use o cliente de teste
-node udp-client.js
+npm run trilho
 ```
+
+Este comando inicia automaticamente:
+- **Servidor UDP** (porta 8888) - recebe dados do encoder
+- **Servidor Web** (porta 3000) - interface de calibração
+- **Bridge UDP→WebSocket** (porta 8889) - comunicação em tempo real
 
 ## 📁 Estrutura do Projeto
 
 ```
 trilho_web/
-├── trilho-final.html      # Interface principal (VERSÃO FUNCIONAL)
-├── udp-bridge.js          # Servidor UDP → WebSocket
-├── udp-client.js          # Cliente UDP para testes
-├── editor/
-│   └── bg300x200-comtv.jpg # Imagem de calibração
-├── package.json           # Dependências Node.js
-└── README.md             # Este arquivo
+├── trilho-final.html          # Interface principal (HTML/JS)
+├── src/                       # Versão React/TypeScript
+├── examples/                  # Exemplos e demos
+├── docs/                      # Documentação
+├── legacy/                    # Arquivos legados
+├── server.js                  # Servidor web
+├── udp-bridge.js             # Bridge UDP→WebSocket
+├── udp-client.js             # Cliente UDP para web
+├── start-trilho.js           # Script de inicialização
+└── package.json              # Dependências e scripts
 ```
 
-## 🔧 Configuração Técnica
+## 🎮 Funcionalidades
 
-### Valores de Calibração Otimizados
-- **Escala**: 5.72 (tamanho da imagem)
-- **Offset X**: 446px (posição horizontal)
-- **Offset Y**: 96px (posição vertical)
-- **Movimento máximo**: 890px (0-100% do slider)
+### Modo Calibração
+- **Ajuste de escala** (zoom) da imagem
+- **Posicionamento** (offset X/Y) da imagem
+- **Posição horizontal** (0-100%) via slider
+- **Controles de sensibilidade** para mouse/touch
+- **Atalhos de teclado** para ajustes precisos
+- **Salvamento** automático no localStorage
 
-### Mapeamento de Dados
-- **Dados UDP**: 0.0 - 1.0 (posição normalizada)
-- **Slider**: 0% - 100% (interface)
-- **Movimento real**: 0% - 89% (limite da imagem)
+### Modo Uso
+- **Recebimento UDP** em tempo real
+- **Interpolação GSAP** para movimento suave 60fps
+- **Controle manual** via mouse/touch (quando UDP desabilitado)
+- **Zoom** via scroll/pinch
+- **Ativação/desativação** do UDP
 
-## 🐛 Resolução de Problemas
+## ⌨️ Atalhos de Teclado
 
-### Imagem não carrega
-- Verifique se `editor/bg300x200-comtv.jpg` existe
-- Confirme que o servidor web está rodando
+### Modo Calibração
+- **Setas**: Mover imagem
+- **Shift + Setas**: Movimento rápido
+- **+/-**: Zoom in/out
+- **R**: Reset para valores padrão
+- **C**: Alternar modo (calibração ↔ uso)
+- **S**: Salvar alterações
+- **ESC**: Sair sem salvar
 
-### UDP não funciona
-- Verifique se `udp-bridge.js` está rodando
-- Confirme que a porta 8888 está livre
-- Teste com: `echo "value 0.5" | nc -u localhost 8888`
+### Modo Uso
+- **P**: Toggle UDP ON/OFF
+- **C**: Voltar para modo calibração
 
-### Controles não respondem
-- Recarregue a página
-- Verifique o console do navegador para erros
-- Confirme que `udp-client.js` está carregado
+## 🔧 Configuração
 
-## 📝 Changelog
+### Valores Padrão
+```javascript
+{
+  scale: 5.72,      // Zoom da imagem
+  offsetX: 446,     // Posição horizontal
+  offsetY: 96,      // Posição vertical
+  position: 0       // Posição do slider (0-100%)
+}
+```
 
-### v1.0.0 - Versão Funcional
-- ✅ Calibração automática implementada
-- ✅ Integração UDP real funcionando
-- ✅ Interface responsiva e intuitiva
-- ✅ Persistência de configurações
-- ✅ Mapeamento correto do movimento
-- ✅ Modo de uso para operação
+### Sensibilidades
+- **Arrastar**: 0.05 (padrão)
+- **Zoom**: 0.02 (padrão)
+- **Interpolação**: 0.3s (duração)
+- **Easing**: power2.out (suavização)
+
+## 📡 Protocolo UDP
+
+### Formato dos Dados
+- **Porta**: 8888
+- **Formato**: JSON
+- **Campo**: `position` (0.0 a 1.0)
+
+### Exemplo
+```javascript
+{
+  "position": 0.5  // 50% da posição
+}
+```
+
+## 🛠️ Desenvolvimento
+
+### Scripts Disponíveis
+```bash
+npm run trilho    # Iniciar sistema completo
+npm run udp       # Apenas servidor UDP
+npm run serve     # Apenas servidor web
+npm run run       # Script personalizado
+```
+
+### Dependências Principais
+- **Express**: Servidor web
+- **Socket.io**: WebSocket para comunicação
+- **GSAP**: Animação e interpolação
+- **Concurrently**: Execução paralela
+
+## 📚 Documentação
+
+- [Guia de Instalação](docs/INSTALACAO.md)
+- [Como Usar](docs/COMO_USAR.md)
+- [Calibração](docs/CALIBRACAO.md)
+- [Comportamento das Áreas](docs/COMPORTAMENTO_AREAS.md)
+- [Guia de Áreas](docs/GUIA_AREAS.md)
+
+## 🎯 Exemplos
+
+- [Demo Básico](examples/demo.html)
+- [Marshal](examples/marshal.html)
+- [Teste Simples](examples/simple.html)
+- [Trilho Simples](examples/trilho-simples.html)
+
+## 🔄 Versões
+
+### HTML/JS (trilho-final.html)
+- ✅ Interface principal
+- ✅ Controles completos
+- ✅ UDP em tempo real
+- ✅ Interpolação GSAP
+- ✅ Mouse/touch drag
+- ✅ Atalhos de teclado
+
+### React/TypeScript (src/)
+- 🔄 Em desenvolvimento
+- 🔄 Componentes modulares
+- 🔄 Estado global
+- 🔄 Hooks personalizados
+
+## 🐛 Solução de Problemas
+
+### Tela Preta
+- Verifique se o UDP está recebendo dados
+- Teste com `sendEncoderData(0.5)` no console
+- Verifique se a posição UDP é válida (0-1)
+
+### Imagem Não Aparece
+- Verifique os valores de `offsetX` e `offsetY`
+- Teste com valores padrão (446, 96)
+- Verifique se `scale` não está muito baixo
+
+### UDP Não Funciona
+- Verifique se o servidor UDP está rodando
+- Teste a conexão WebSocket
+- Verifique se está no modo "uso"
+
+## 📄 Licença
+
+MIT License - veja [LICENSE](LICENSE) para detalhes.
 
 ## 🤝 Contribuição
 
 1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
 5. Abra um Pull Request
 
-## 📄 Licença
+## 📞 Suporte
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
-
-## 👨‍💻 Autor
-
-**Felipe Brito**
-- GitHub: [@felipebrito](https://github.com/felipebrito)
-- Projeto: [trilho_web](https://github.com/felipebrito/trilho_web)
-
----
-
-🎯 **Sistema pronto para produção!** A versão `trilho-final.html` é a versão principal e funcional.
+Para suporte, abra uma [issue](https://github.com/felipebrito/trilho_web/issues) no GitHub.

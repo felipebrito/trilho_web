@@ -3,7 +3,7 @@
 ## ⚡ Comando Único
 
 ```bash
-npm run
+npm run trilho
 ```
 
 **OU**
@@ -31,12 +31,30 @@ node start-trilho.js
 ## 📡 Como usar:
 
 1. **Abra** a interface no navegador
-2. **Clique** `📡 UDP ON` para ativar recepção
-3. **Envie dados UDP** para testar:
+2. **Pressione C** para entrar no modo calibração
+3. **Ajuste** a imagem conforme necessário
+4. **Pressione C** novamente para ir ao modo uso
+5. **UDP ativa automaticamente** no modo uso
+6. **Envie dados UDP** para testar:
    ```bash
    echo "value 0.5" | nc -u localhost 8888
    ```
-4. **Pressione** `Ctrl+C` para parar tudo
+7. **Pressione** `Ctrl+C` para parar tudo
+
+---
+
+## 🎮 Controles Rápidos
+
+### Modo Calibração
+- **C** - Alternar modo
+- **Setas** - Mover imagem
+- **+/-** - Zoom
+- **S** - Salvar
+- **ESC** - Sair sem salvar
+
+### Modo Uso
+- **P** - Toggle UDP
+- **C** - Voltar para calibração
 
 ---
 
