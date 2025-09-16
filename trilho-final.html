@@ -19,6 +19,12 @@
             position: relative;
             background: #000;
             overflow: hidden;
+            cursor: grab;
+            user-select: none;
+        }
+        
+        .viewport:active {
+            cursor: grabbing;
         }
         
         .background-image {
@@ -154,6 +160,22 @@
             font-size: 14px;
             font-weight: bold;
         }
+        
+        .control-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #555;
+            background: #222;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .control-group select:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
     </style>
 </head>
 <body>
@@ -188,6 +210,33 @@
         <button class="btn" onclick="saveCalibration()">💾 Salvar</button>
         <button class="btn" onclick="toggleMode()">🎮 Modo Uso</button>
         <button class="btn" onclick="toggleUDP()" id="udpButton">📡 UDP OFF</button>
+        
+        <div class="control-group">
+            <label>Interpolação: <span id="interpolationValue">0.3s</span></label>
+            <input type="range" id="interpolationSlider" min="0.1" max="2.0" step="0.1" value="0.3">
+        </div>
+        
+        <div class="control-group">
+            <label>Easing: <span id="easingValue">power2.out</span></label>
+            <select id="easingSelect" onchange="updateEasing()">
+                <option value="power2.out">Suave (power2.out)</option>
+                <option value="power3.out">Mais suave (power3.out)</option>
+                <option value="power4.out">Muito suave (power4.out)</option>
+                <option value="back.out">Elástico (back.out)</option>
+                <option value="bounce.out">Saltitante (bounce.out)</option>
+                <option value="linear">Linear</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Sensibilidade Arrastar: <span id="dragSensitivityValue">0.05</span></label>
+            <input type="range" id="dragSensitivitySlider" min="0.01" max="0.5" step="0.01" value="0.05">
+        </div>
+        
+        <div class="control-group">
+            <label>Sensibilidade Zoom: <span id="zoomSensitivityValue">0.02</span></label>
+            <input type="range" id="zoomSensitivitySlider" min="0.005" max="0.1" step="0.005" value="0.02">
+        </div>
     </div>
     
     <div class="slider">
@@ -195,7 +244,20 @@
     </div>
     
     <div class="position-display" id="positionDisplay">0%</div>
+    
+    <!-- Indicador de modo de controle -->
+    <div id="controlModeIndicator" class="position-display" style="top: 60px; background: rgba(0,0,0,0.8); font-size: 14px;">
+        🖱️ Arrastar habilitado
+    </div>
+    
+    <!-- Indicador de atalhos de teclado -->
+    <div id="keyboardShortcuts" class="position-display" style="top: 100px; background: rgba(0,0,0,0.8); font-size: 12px; max-width: 300px;">
+        ⌨️ Setas: mover • Shift+Setas: rápido • +/-: zoom • R: reset • C: modo • S: salvar • P: UDP (uso) • ESC: sair sem salvar
+    </div>
 
+    <!-- GSAP para interpolação suave -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
     <!-- Cliente UDP -->
     <script src="udp-client.js"></script>
     
@@ -211,8 +273,43 @@
         // Controle UDP
         let udpEnabled = false;
         let udpInterval = null;
+        
+        // Estados do sistema
+        let currentMode = 'calibration'; // 'calibration' ou 'usage'
+        let hasChanges = false; // Para controlar se há alterações não salvas
+
+        // Interpolação GSAP para movimento suave
+        let gsapTween = null;
+        let targetPosition = 0; // Posição alvo recebida via UDP
+        let currentPosition = 0; // Posição atual interpolada
+        let isInterpolating = false;
+
+        // Controle de mouse/touch
+        let isDragging = false;
+        let lastMousePos = { x: 0, y: 0 };
+        let lastTouch = null;
+        let pinch = null;
+        
+        // Sensibilidades ajustáveis
+        let dragSensitivity = 0.05; // Muito mais suave
+        let zoomSensitivity = 0.02;
+        
+        // Configurações da interpolação
+        const INTERPOLATION_CONFIG = {
+            duration: 0.3, // Duração da interpolação em segundos
+            ease: "power2.out", // Easing para movimento natural
+            onUpdate: () => {
+                // Atualizar posição durante a interpolação
+                updatePositionFromInterpolation(currentPosition);
+            },
+            onComplete: () => {
+                isInterpolating = false;
+                console.log('🎬 Interpolação concluída');
+            }
+        };
 
         // Elementos
+        const viewport = document.querySelector('.viewport');
         const backgroundImage = document.getElementById('backgroundImage');
         const positionSlider = document.getElementById('positionSlider');
         const positionDisplay = document.getElementById('positionDisplay');
@@ -228,6 +325,16 @@
         const offsetYSlider = document.getElementById('offsetYSlider');
         const offsetYInput = document.getElementById('offsetYInput');
         const offsetYValue = document.getElementById('offsetYValue');
+        
+        const interpolationSlider = document.getElementById('interpolationSlider');
+        const interpolationValue = document.getElementById('interpolationValue');
+        const easingSelect = document.getElementById('easingSelect');
+        const easingValue = document.getElementById('easingValue');
+        
+        const dragSensitivitySlider = document.getElementById('dragSensitivitySlider');
+        const dragSensitivityValue = document.getElementById('dragSensitivityValue');
+        const zoomSensitivitySlider = document.getElementById('zoomSensitivitySlider');
+        const zoomSensitivityValue = document.getElementById('zoomSensitivityValue');
 
         // Inicializar
         function init() {
@@ -251,8 +358,38 @@
             offsetYInput.addEventListener('input', () => updateOffsetY(offsetYInput.value));
             offsetYInput.addEventListener('wheel', handleScroll);
             
+            // Controles de interpolação
+            interpolationSlider.addEventListener('input', () => updateInterpolationDuration(interpolationSlider.value));
+            
+            // Controles de sensibilidade
+            dragSensitivitySlider.addEventListener('input', () => updateDragSensitivity(dragSensitivitySlider.value));
+            zoomSensitivitySlider.addEventListener('input', () => updateZoomSensitivity(zoomSensitivitySlider.value));
+            
+            // Event listeners para mouse/touch
+            viewport.addEventListener('mousedown', handleMouseDown);
+            viewport.addEventListener('mousemove', handleMouseMove);
+            viewport.addEventListener('mouseup', handleMouseUp);
+            viewport.addEventListener('mouseleave', handleMouseUp);
+            viewport.addEventListener('wheel', handleWheel, { passive: false });
+            
+            // Event listeners para touch
+            viewport.addEventListener('touchstart', handleTouchStart, { passive: false });
+            viewport.addEventListener('touchmove', handleTouchMove, { passive: false });
+            viewport.addEventListener('touchend', handleTouchEnd);
+            
+            // Event listeners para teclado
+            window.addEventListener('keydown', handleKeyDown);
+            
             // Aplicar valores corretos automaticamente (sem carregar calibração antiga)
             applyCorrectValues();
+            
+            // Inicializar controles de interpolação
+            interpolationValue.textContent = INTERPOLATION_CONFIG.duration + 's';
+            easingValue.textContent = INTERPOLATION_CONFIG.ease;
+            
+            // Inicializar controles de sensibilidade
+            dragSensitivityValue.textContent = dragSensitivity.toFixed(1);
+            zoomSensitivityValue.textContent = zoomSensitivity.toFixed(3);
             
             console.log('✅ Pronto!');
         }
@@ -293,6 +430,7 @@
             scaleInput.value = config.scale;
             scaleValue.textContent = config.scale.toFixed(2);
             applyTransform();
+            markAsChanged();
         }
 
         // Atualizar offset X
@@ -302,6 +440,7 @@
             offsetXInput.value = config.offsetX;
             offsetXValue.textContent = config.offsetX;
             applyTransform();
+            markAsChanged();
         }
 
         // Atualizar offset Y
@@ -311,14 +450,363 @@
             offsetYInput.value = config.offsetY;
             offsetYValue.textContent = config.offsetY;
             applyTransform();
+            markAsChanged();
         }
 
-        // Atualizar posição
+        // Atualizar posição (para controle manual)
         function updatePosition(value) {
             config.position = parseFloat(value);
             positionSlider.value = config.position;
             positionDisplay.textContent = config.position + '%';
             applyTransform();
+        }
+
+        // Atualizar posição via interpolação GSAP (para UDP)
+        function updatePositionFromInterpolation(value) {
+            config.position = parseFloat(value);
+            positionSlider.value = config.position;
+            positionDisplay.textContent = config.position.toFixed(1) + '%';
+            applyTransform();
+        }
+
+        // Interpolar para nova posição (usado pelo UDP)
+        function interpolateToPosition(targetValue) {
+            targetPosition = parseFloat(targetValue);
+            
+            // Se já está interpolando, interromper e começar nova interpolação
+            if (isInterpolating && gsapTween) {
+                gsapTween.kill();
+            }
+            
+            // Iniciar nova interpolação
+            isInterpolating = true;
+            gsapTween = gsap.to({ value: currentPosition }, {
+                value: targetPosition,
+                duration: INTERPOLATION_CONFIG.duration,
+                ease: INTERPOLATION_CONFIG.ease,
+                onUpdate: function() {
+                    currentPosition = this.targets()[0].value;
+                    updatePositionFromInterpolation(currentPosition);
+                },
+                onComplete: () => {
+                    isInterpolating = false;
+                    currentPosition = targetPosition;
+                    console.log('🎬 Interpolação concluída - Posição final:', targetPosition.toFixed(1) + '%');
+                }
+            });
+            
+            console.log('🎬 Iniciando interpolação:', currentPosition.toFixed(1) + '% → ' + targetPosition.toFixed(1) + '%');
+        }
+
+        // Atualizar duração da interpolação
+        function updateInterpolationDuration(value) {
+            INTERPOLATION_CONFIG.duration = parseFloat(value);
+            interpolationValue.textContent = value + 's';
+            console.log('⚙️ Duração da interpolação:', value + 's');
+        }
+
+        // Atualizar tipo de easing
+        function updateEasing() {
+            INTERPOLATION_CONFIG.ease = easingSelect.value;
+            easingValue.textContent = easingSelect.value;
+            console.log('⚙️ Easing atualizado:', easingSelect.value);
+        }
+
+        // Atualizar sensibilidade do arrastar
+        function updateDragSensitivity(value) {
+            dragSensitivity = parseFloat(value);
+            dragSensitivityValue.textContent = dragSensitivity.toFixed(1);
+            console.log('⚙️ Sensibilidade do arrastar:', dragSensitivity);
+        }
+
+        // Atualizar sensibilidade do zoom
+        function updateZoomSensitivity(value) {
+            zoomSensitivity = parseFloat(value);
+            zoomSensitivityValue.textContent = zoomSensitivity.toFixed(3);
+            console.log('⚙️ Sensibilidade do zoom:', zoomSensitivity);
+        }
+
+        // Marcar como alterado
+        function markAsChanged() {
+            hasChanges = true;
+            updateSaveIndicator();
+        }
+
+        // Limpar alterações
+        function clearChanges() {
+            hasChanges = false;
+            updateSaveIndicator();
+        }
+
+        // Atualizar indicador de salvar
+        function updateSaveIndicator() {
+            const controlModeIndicator = document.getElementById('controlModeIndicator');
+            if (hasChanges && currentMode === 'calibration') {
+                controlModeIndicator.textContent = '🔧 Modo Calibração • 💾 SALVAR (S)';
+                controlModeIndicator.style.background = 'rgba(255,100,0,0.8)';
+            } else if (currentMode === 'calibration') {
+                controlModeIndicator.textContent = '🔧 Modo Calibração';
+                controlModeIndicator.style.background = 'rgba(200,100,0,0.8)';
+            } else if (currentMode === 'usage' && udpEnabled) {
+                controlModeIndicator.textContent = '🎮 Modo Uso • 📡 UDP ON';
+                controlModeIndicator.style.background = 'rgba(0,100,200,0.8)';
+            } else {
+                controlModeIndicator.textContent = '🎮 Modo Uso';
+                controlModeIndicator.style.background = 'rgba(0,150,0,0.8)';
+            }
+        }
+
+        // Salvar configuração
+        function saveConfiguration() {
+            localStorage.setItem('trilho_calibration', JSON.stringify(config));
+            clearChanges();
+            console.log('💾 Configuração salva:', config);
+            alert('Configuração salva com sucesso!');
+        }
+
+        // Funções de controle de mouse/touch
+        function getMousePos(e) {
+            const rect = viewport.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function getTouchPos(touch) {
+            const rect = viewport.getBoundingClientRect();
+            return {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+        }
+
+        function getDistance(p1, p2) {
+            const dx = p1.x - p2.x;
+            const dy = p1.y - p2.y;
+            return Math.hypot(dx, dy);
+        }
+
+        // Controle de zoom com scroll
+        function handleWheel(e) {
+            e.preventDefault();
+            
+            const delta = e.deltaY;
+            const newScale = config.scale + (delta > 0 ? -zoomSensitivity : zoomSensitivity);
+            
+            // Limitar escala
+            const clampedScale = Math.max(0.1, Math.min(10.0, newScale));
+            
+            if (clampedScale !== config.scale) {
+                updateScale(clampedScale);
+                console.log('🔍 Zoom:', config.scale.toFixed(2));
+            }
+        }
+
+        // Controle de arrastar com mouse
+        function handleMouseDown(e) {
+            if (udpEnabled) return; // Só permite arrastar se UDP estiver desabilitado
+            
+            isDragging = true;
+            lastMousePos = getMousePos(e);
+            viewport.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging || udpEnabled) return;
+            
+            const currentPos = getMousePos(e);
+            const deltaX = currentPos.x - lastMousePos.x;
+            const deltaY = currentPos.y - lastMousePos.y;
+            
+            // Sensibilidade ajustável do arrastar
+            const newOffsetX = config.offsetX + (deltaX * dragSensitivity);
+            const newOffsetY = config.offsetY + (deltaY * dragSensitivity);
+            
+            updateOffsetX(newOffsetX);
+            updateOffsetY(newOffsetY);
+            
+            lastMousePos = currentPos;
+        }
+
+        function handleMouseUp(e) {
+            isDragging = false;
+            viewport.style.cursor = 'grab';
+        }
+
+        // Controle de touch
+        function handleTouchStart(e) {
+            if (udpEnabled) return;
+            
+            if (e.touches.length === 1) {
+                lastTouch = getTouchPos(e.touches[0]);
+            } else if (e.touches.length === 2) {
+                const p1 = getTouchPos(e.touches[0]);
+                const p2 = getTouchPos(e.touches[1]);
+                const distance = getDistance(p1, p2);
+                const centerX = (p1.x + p2.x) / 2;
+                const centerY = (p1.y + p2.y) / 2;
+                
+                pinch = {
+                    distance: distance,
+                    scale: config.scale,
+                    centerX: centerX,
+                    centerY: centerY
+                };
+            }
+        }
+
+        function handleTouchMove(e) {
+            if (udpEnabled) return;
+            
+            e.preventDefault();
+            
+            if (e.touches.length === 1 && lastTouch) {
+                // Arrastar com um dedo
+                const currentTouch = getTouchPos(e.touches[0]);
+                const deltaX = currentTouch.x - lastTouch.x;
+                const deltaY = currentTouch.y - lastTouch.y;
+                
+                const newOffsetX = config.offsetX + (deltaX * dragSensitivity);
+                const newOffsetY = config.offsetY + (deltaY * dragSensitivity);
+                
+                updateOffsetX(newOffsetX);
+                updateOffsetY(newOffsetY);
+                
+                lastTouch = currentTouch;
+            } else if (e.touches.length === 2 && pinch) {
+                // Pinch para zoom
+                const p1 = getTouchPos(e.touches[0]);
+                const p2 = getTouchPos(e.touches[1]);
+                const currentDistance = getDistance(p1, p2);
+                
+                const scaleFactor = currentDistance / pinch.distance;
+                const newScale = pinch.scale * scaleFactor;
+                const clampedScale = Math.max(0.1, Math.min(10.0, newScale));
+                
+                if (clampedScale !== config.scale) {
+                    // Ajustar offset para manter o centro do zoom
+                    const scaleDiff = clampedScale - config.scale;
+                    const newOffsetX = config.offsetX + (pinch.centerX * scaleDiff);
+                    const newOffsetY = config.offsetY + (pinch.centerY * scaleDiff);
+                    
+                    updateScale(clampedScale);
+                    updateOffsetX(newOffsetX);
+                    updateOffsetY(newOffsetY);
+                }
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (e.touches.length === 0) {
+                lastTouch = null;
+                pinch = null;
+            } else if (e.touches.length === 1) {
+                pinch = null;
+                lastTouch = getTouchPos(e.touches[0]);
+            }
+        }
+
+        // Controle de teclado
+        function handleKeyDown(e) {
+            const step = e.shiftKey ? 10 : 1; // SHIFT = movimento mais rápido
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    if (currentMode === 'calibration') {
+                        updateOffsetX(config.offsetX - step);
+                        console.log('⬅️ Offset X:', config.offsetX);
+                    }
+                    break;
+                    
+                case 'ArrowRight':
+                    e.preventDefault();
+                    if (currentMode === 'calibration') {
+                        updateOffsetX(config.offsetX + step);
+                        console.log('➡️ Offset X:', config.offsetX);
+                    }
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (currentMode === 'calibration') {
+                        updateOffsetY(config.offsetY - step);
+                        console.log('⬆️ Offset Y:', config.offsetY);
+                    }
+                    break;
+                    
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (currentMode === 'calibration') {
+                        updateOffsetY(config.offsetY + step);
+                        console.log('⬇️ Offset Y:', config.offsetY);
+                    }
+                    break;
+                    
+                case '=':
+                case '+':
+                    e.preventDefault();
+                    if (currentMode === 'calibration') {
+                        updateScale(Math.min(config.scale + 0.1, 10.0));
+                        console.log('🔍 Zoom in:', config.scale.toFixed(2));
+                    }
+                    break;
+                    
+                case '-':
+                    e.preventDefault();
+                    if (currentMode === 'calibration') {
+                        updateScale(Math.max(config.scale - 0.1, 0.1));
+                        console.log('🔍 Zoom out:', config.scale.toFixed(2));
+                    }
+                    break;
+                    
+                case 'r':
+                case 'R':
+                    e.preventDefault();
+                    if (currentMode === 'calibration') {
+                        reset();
+                        clearChanges();
+                        console.log('🔄 Reset aplicado');
+                    }
+                    break;
+                    
+                case 'c':
+                case 'C':
+                    e.preventDefault();
+                    toggleMode();
+                    break;
+                    
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    if (currentMode === 'calibration' && hasChanges) {
+                        saveConfiguration();
+                    }
+                    break;
+                    
+                case 'p':
+                case 'P':
+                    e.preventDefault();
+                    if (currentMode === 'usage') {
+                        toggleUDP(); // UDP só funciona em modo USO
+                    }
+                    break;
+                    
+                case 'Escape':
+                    e.preventDefault();
+                    if (currentMode === 'calibration') {
+                        // ESC: fazer exatamente a mesma coisa que C (sair sem salvar)
+                        console.log('⚠️ ESC pressionado - saindo do modo calibração sem salvar');
+                        console.log('🔍 Estado atual - currentMode:', currentMode, 'hasChanges:', hasChanges);
+                        toggleMode(); // Sai do modo calibração (mesma lógica do C)
+                        console.log('✅ toggleMode() executado via ESC, currentMode agora:', currentMode);
+                    } else {
+                        console.log('⚠️ ESC pressionado mas não está em modo calibração. currentMode:', currentMode);
+                    }
+                    break;
+            }
         }
 
         // Aplicar transformação
@@ -332,17 +820,21 @@
             // Diferença = 446 - (-444) = 890px
             const maxMovement = 890; // Movimento máximo em pixels (calculado)
             
+            // Verificar se config.position existe, senão usar 0
+            const position = config.position !== undefined ? config.position : 0;
+            
             // Mapear 0-100% do slider para 0-100% real
-            const realPosition = (config.position / 100) * maxPosition;
+            const realPosition = (position / 100) * maxPosition;
             const horizontalOffset = (realPosition / maxPosition) * maxMovement;
             
-            const translateX = config.offsetX - horizontalOffset;
-            const translateY = config.offsetY;
+            const translateX = (config.offsetX || 0) - horizontalOffset;
+            const translateY = config.offsetY || 0;
             
-            const transform = `scale(${config.scale}) translate(${translateX}px, ${translateY}px)`;
+            const transform = `scale(${config.scale || 1}) translate(${translateX}px, ${translateY}px)`;
             backgroundImage.style.transform = transform;
             
-            console.log('🔄 Posição real:', realPosition.toFixed(1) + '%', 'Transform:', transform);
+            console.log('🔄 applyTransform() - Posição:', position.toFixed(1) + '%', 'Real:', realPosition.toFixed(1) + '%', 'Offset:', horizontalOffset.toFixed(1) + 'px', 'TranslateX:', translateX.toFixed(1) + 'px');
+            console.log('🔄 Transform completo:', transform);
         }
 
         // Lidar com scroll do mouse nos campos de número
@@ -438,34 +930,106 @@
 
         function toggleMode() {
             const controls = document.querySelector('.controls');
-            const isHidden = controls.style.display === 'none';
+            const controlModeIndicator = document.getElementById('controlModeIndicator');
+            const keyboardShortcuts = document.getElementById('keyboardShortcuts');
             
-            if (isHidden) {
-                controls.style.display = 'block';
-                console.log('🔧 Modo Calibração ativado');
-            } else {
+            console.log('🔄 toggleMode() chamado - currentMode atual:', currentMode);
+            console.log('🔍 Elementos encontrados - controls:', controls, 'keyboardShortcuts:', keyboardShortcuts);
+            
+            if (currentMode === 'calibration') {
+                // Mudar para modo USO - ativar UDP automaticamente
+                currentMode = 'usage';
                 controls.style.display = 'none';
-                console.log('🎮 Modo Uso ativado - apenas movimento');
+                keyboardShortcuts.style.display = 'block';
+                
+                // Se há alterações não salvas, descartar e restaurar valores salvos
+                if (hasChanges) {
+                    console.log('⚠️ Alterações não salvas descartadas ao sair do modo calibração');
+                    loadCalibration(); // Restaura os valores salvos
+                    clearChanges(); // Limpa o flag de alterações
+                }
+                
+                // Ativar UDP automaticamente no modo USO
+                udpEnabled = true;
+                connectUDP();
+                const udpButton = document.getElementById('udpButton');
+                udpButton.textContent = '📡 UDP ON';
+                udpButton.style.background = '#4CAF50';
+                console.log('📡 UDP ativado automaticamente ao entrar no modo USO');
+                
+                updateSaveIndicator();
+                console.log('🎮 Modo Uso ativado');
+            } else {
+                // Mudar para modo CALIBRAÇÃO - desabilitar UDP automaticamente
+                currentMode = 'calibration';
+                controls.style.display = 'block';
+                keyboardShortcuts.style.display = 'block';
+                
+                // Desabilitar UDP se estiver ativo
+                if (udpEnabled) {
+                    udpEnabled = false;
+                    disconnectUDP();
+                    const udpButton = document.getElementById('udpButton');
+                    udpButton.textContent = '📡 UDP OFF';
+                    udpButton.style.background = '#666';
+                    console.log('📡 UDP desabilitado automaticamente ao entrar no modo CALIBRAÇÃO');
+                }
+                
+                updateSaveIndicator();
+                console.log('🔧 Modo Calibração ativado');
             }
         }
+
+        // Callback para receber dados UDP
+        let udpCallback = null;
 
         // Conectar ao cliente UDP real
         function connectUDP() {
             if (window.udpClient) {
-                // Registrar callback para receber dados UDP reais
-                window.udpClient.onPositionUpdate((position) => {
-                    console.log('📡 UDP real recebido:', position.toFixed(3));
-                    
-                    // Mapear para slider (0 a 100%)
-                    const sliderPosition = position * 100;
-                    updatePosition(sliderPosition);
-                });
+                // Criar callback para receber dados UDP reais
+                udpCallback = (position) => {
+                    if (udpEnabled) { // Só processa se UDP estiver habilitado
+                        console.log('📡 UDP real recebido:', position.toFixed(3));
+                        
+                        // Verificar se a posição é válida
+                        if (position !== null && position !== undefined && !isNaN(position)) {
+                            // Mapear para slider (0 a 100%)
+                            const sliderPosition = position * 100;
+                            
+                            console.log('📊 UDP - Posição original:', position, '→ Slider:', sliderPosition.toFixed(1) + '%');
+                            
+                            // Usar interpolação GSAP para movimento suave
+                            interpolateToPosition(sliderPosition);
+                        } else {
+                            console.log('⚠️ Posição UDP inválida, mantendo posição atual');
+                        }
+                    }
+                };
+                
+                // Registrar callback
+                window.udpClient.onPositionUpdate(udpCallback);
                 
                 // Tentar conectar ao WebSocket real
                 window.udpClient.startUDPListener();
                 console.log('📡 Conectando ao UDP real...');
             } else {
                 console.error('❌ Cliente UDP não encontrado');
+            }
+        }
+
+        // Desconectar UDP
+        function disconnectUDP() {
+            if (window.udpClient && udpCallback) {
+                // Remover callback
+                window.udpClient.removeCallback(udpCallback);
+                udpCallback = null;
+                
+                // Fechar WebSocket se existir
+                if (window.udpClient.ws) {
+                    window.udpClient.ws.close();
+                }
+                
+                console.log('📡 UDP desconectado');
             }
         }
 
@@ -476,17 +1040,21 @@
             if (udpEnabled) {
                 // Desabilitar UDP
                 udpEnabled = false;
+                disconnectUDP(); // Desconectar completamente
                 udpButton.textContent = '📡 UDP OFF';
                 udpButton.style.background = '#666';
-                console.log('📡 UDP desabilitado');
+                console.log('📡 UDP desabilitado - dados não serão mais processados');
             } else {
                 // Habilitar UDP real
-                connectUDP();
                 udpEnabled = true;
+                connectUDP();
                 udpButton.textContent = '📡 UDP ON';
                 udpButton.style.background = '#4CAF50';
                 console.log('📡 UDP habilitado - aguardando dados reais');
             }
+            
+            // Atualizar indicador de modo
+            updateSaveIndicator();
         }
 
         // Inicializar
